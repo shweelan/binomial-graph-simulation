@@ -1,7 +1,7 @@
 all: clean_build prepare_build build_app
 
 build_app:
-	-javac -Xdiags:verbose -g -d build/ *.java
+	-javac -Xdiags:verbose -Xlint:unchecked -g -d build/ *.java
 
 prepare_build:
 	-mkdir build
