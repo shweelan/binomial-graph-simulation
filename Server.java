@@ -2,6 +2,7 @@ package bn;
 
 import java.net.*;
 import java.io.*;
+import java.util.*;
 
 
 class ConnectionWorker implements Runnable {
@@ -21,9 +22,15 @@ class ConnectionWorker implements Runnable {
         String inputLine;
         while ((inputLine = inputStream.readLine()) != null) {
           // TODO statistics, routing
+          System.out.println(inputLine);
           if (inputLine.equals("bye")) {
             break;
           }
+        }
+      }
+      catch (Exception e) {
+        if (!(e instanceof SocketException)) {
+          e.printStackTrace();
         }
       }
       finally {
@@ -35,35 +42,61 @@ class ConnectionWorker implements Runnable {
       e.printStackTrace();
     }
   }
+
+  public void stop() throws Exception {
+    socket.close();
+  }
 }
 
 class ServerWorker implements Runnable {
-  private int port;
+  private ServerSocket server = null;
+  private ArrayList<ConnectionWorker> workers;
 
-  public ServerWorker(int port) {
-    this.port = port;
+  public ServerWorker(int port) throws Exception {
+    server = new ServerSocket(port);
+    System.out.println("Server listening on port " + server.getLocalPort());
+    workers = new ArrayList<ConnectionWorker>();
   }
 
   public void run() {
     try {
-      ServerSocket server = new ServerSocket(port);
-      System.out.println("Server listening on port " + server.getLocalPort());
       while (true) {
         Socket socket = server.accept();
-        new Thread(new ConnectionWorker(socket)).start();
+        ConnectionWorker worker = new ConnectionWorker(socket);
+        Thread thread = new Thread(worker);
+        thread.start();
+        workers.add(worker);
       }
     }
     catch (Exception e) {
-      e.printStackTrace();
+      // Closing serverSocket will throw Exception then stop listener.
+      if (!(e instanceof SocketException)) {
+        e.printStackTrace();
+      }
+    }
+  }
+
+  public void stop() throws Exception {
+    if (server != null) {
+      server.close();
+      for (ConnectionWorker worker : workers) {
+        worker.stop();
+      }
     }
   }
 }
 
 public class Server {
   private static Thread thread;
+  private static ServerWorker worker;
+
   public static void startServer(int port) throws Exception {
-    thread = new Thread(new ServerWorker(port));
+    worker = new ServerWorker(port);
+    thread = new Thread(worker);
     thread.start();
-    // TODO implement a way to kill server!
+  }
+
+  public static void stopServer() throws Exception {
+    worker.stop();
   }
 }

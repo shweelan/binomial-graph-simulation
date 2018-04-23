@@ -48,12 +48,12 @@ class Main {
     Thread.sleep(10000);
   }
 
-  private static void stopServer() {
-
+  private static void stopServer() throws Exception {
+    Server.stopServer();
   }
 
   private static void startBootBash() {
-    // TODO implement or block till exit then loop again.
+    // TODO implement or block bash script till java exits then loop again.
   }
 
   public static void main(String args[]) throws Exception {
@@ -63,6 +63,7 @@ class Main {
     final int nMax = Integer.parseInt(args[2]);
     final String selfId = myIp + ":" + myPort;
     startServer(myPort);
+    /*
     controller.announceNode(selfId);
     int nodesCount = controller.getNodesCount();
     while(controller.getAnnouncedNodesCount() < nodesCount) {
@@ -78,6 +79,8 @@ class Main {
     while(controller.getAnnouncedNodesCount() > 0) {
       Thread.sleep(1);
     }
+    */
+    Thread.sleep(20000);
     stopServer();
     startBootBash();
   }
