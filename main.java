@@ -11,6 +11,9 @@ class Main {
   }
 
   private static HashMap<Integer, HashSet<Integer>> buildBinomialGraphNetwork(ArrayList<String> nodes, int nMax) throws Exception {
+    if (nodes.size() < 2) {
+      throw new Exception("ERROR! Number of nodes in network < 2");
+    }
     int numNodes = nodes.size();
     // TODO Enable if duplex, final double powerBase = Math.pow(numNodes * 1.0, (2.0 / (nMax * 1.0)));
     final double powerBase = Math.pow(numNodes, 1.0 / nMax);
@@ -37,6 +40,7 @@ class Main {
       }
       i++;
     }
+    System.out.println(binomialGraph);
     return binomialGraph;
   }
 
@@ -45,7 +49,8 @@ class Main {
   }
 
   public static void startSimulation(HashMap<Integer, ArrayList<Integer>> routes) throws Exception {
-    Thread.sleep(10000);
+    System.out.println("Simulation Started");
+    Thread.sleep(5000);
   }
 
   private static void stopServer() throws Exception {
@@ -57,31 +62,35 @@ class Main {
   }
 
   public static void main(String args[]) throws Exception {
-    Controller controller = Controller.init();
-    final String myIp = args[0];
-    final int myPort = Integer.parseInt(args[1]);
-    final int nMax = Integer.parseInt(args[2]);
-    final String selfId = myIp + ":" + myPort;
-    startServer(myPort);
-    /*
-    controller.announceNode(selfId);
-    int nodesCount = controller.getNodesCount();
-    while(controller.getAnnouncedNodesCount() < nodesCount) {
-      Thread.sleep(1);
+    try {
+      Controller controller = Controller.init();
+      final String myIp = args[0];
+      final int myPort = Integer.parseInt(args[1]);
+      final int nMax = Integer.parseInt(args[2]);
+      final String selfId = myIp + ":" + myPort;
+      startServer(myPort);
+      controller.announceNode(selfId);
+      int nodesCount = controller.getNodesCount();
+      if (nodesCount < 2) {
+        throw new Exception("ERROR! Number of nodes declared < 2");
+      }
+      while(controller.getAnnouncedNodesCount() < nodesCount) {
+        Thread.sleep(1000);
+      }
+      controller.resetNodesCount();
+      ArrayList<String> nodes = controller.getAnnouncedNodes();
+      int selfIndex = nodes.indexOf(selfId);
+      HashMap<Integer, HashSet<Integer>> binomialGraph = buildBinomialGraphNetwork(nodes, nMax);
+      HashMap<Integer, ArrayList<Integer>> routes = calculateRoutes(selfIndex, binomialGraph);
+      startSimulation(routes);
+      controller.delAnnouncedNode(selfId);
+      while(controller.getAnnouncedNodesCount() > 0) {
+        Thread.sleep(1000);
+      }
     }
-    controller.resetNodesCount();
-    ArrayList<String> nodes = controller.getAnnouncedNodes();
-    int selfIndex = nodes.indexOf(selfId);
-    HashMap<Integer, HashSet<Integer>> binomialGraph = buildBinomialGraphNetwork(nodes, nMax);
-    HashMap<Integer, ArrayList<Integer>> routes = calculateRoutes(selfIndex, binomialGraph);
-    startSimulation(routes);
-    controller.delAnnouncedNode(selfId);
-    while(controller.getAnnouncedNodesCount() > 0) {
-      Thread.sleep(1);
+    finally {
+      stopServer();
+      startBootBash();
     }
-    */
-    Thread.sleep(20000);
-    stopServer();
-    startBootBash();
   }
 }
