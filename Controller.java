@@ -11,6 +11,13 @@ public class Controller {
   private static final String LISTENERS_ID = "LISTENERS";
   private static final String NODES_COUNT_ID = "NUM_NODES";
 
+  public static Controller init() {
+    if (self == null) {
+      self = new Controller();
+    }
+    return self;
+  }
+
   private String redisAPI(String[] command) throws Exception {
     StringBuffer urlBuilder = new StringBuffer();
     urlBuilder.append(REDIS_URL);
@@ -38,13 +45,6 @@ public class Controller {
 		inputStream.close();
     System.out.println("REDIS RESPONSE : " + responseBuilder.toString());
 		return responseBuilder.toString();
-  }
-
-  public static Controller init() {
-    if (self == null) {
-      self = new Controller();
-    }
-    return self;
   }
 
   public void announceNode(String id) throws Exception {
@@ -103,7 +103,7 @@ public class Controller {
     String[] command = {
       "LREM",
       LISTENERS_ID,
-      "1",
+      "0",
       id
     };
     redisAPI(command);

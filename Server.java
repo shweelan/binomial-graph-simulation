@@ -22,6 +22,8 @@ class ConnectionWorker implements Runnable {
         String inputLine;
         while ((inputLine = inputStream.readLine()) != null) {
           // TODO statistics, routing
+          // TODO ask for ping pong to measure latencies
+          // TODO deal with bytes
           System.out.println(inputLine);
           if (inputLine.equals("bye")) {
             break;
