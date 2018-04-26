@@ -1,8 +1,7 @@
 package bn;
 
-import java.net.*;
-import java.io.*;
-import java.util.*;
+import java.net.Socket;
+import java.io.PrintStream;
 
 public class DirectConnection {
   private int remoteNodeNumber;

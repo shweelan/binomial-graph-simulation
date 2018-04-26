@@ -3,10 +3,12 @@ package bn;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Random;
 import java.lang.System;
 
 public class Helper {
   // TODO remove
+  private static Random random = new Random();
   private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
   public static void bytesToHex(byte[] bytes) {
     char[] hexChars = new char[bytes.length * 3];
@@ -41,6 +43,7 @@ public class Helper {
     byte[] serializedTotalLength = serialize(totalLength);
     byte[] serializedRouteSize = serialize(route.length);
     byte[] serializedChunk = new byte[chunkSize];
+    random.nextBytes(serializedChunk);
     byte[][] parts = {
       serializedTotalLength,
       src,
