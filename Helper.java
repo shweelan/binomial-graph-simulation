@@ -7,8 +7,8 @@ import java.util.Random;
 import java.lang.System;
 
 public class Helper {
-  // TODO remove
   private static Random random = new Random();
+  // TODO remove
   private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
   public static void bytesToHex(byte[] bytes) {
     char[] hexChars = new char[bytes.length * 3];
