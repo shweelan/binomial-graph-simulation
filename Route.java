@@ -1,6 +1,7 @@
 package bn;
 
 import java.util.ArrayList;
+import bn.Helper;
 
 public class Route {
   private int source;
@@ -28,7 +29,7 @@ public class Route {
   }
 
   public Integer getRandomViaNode() {
-    int i = 0;// TODO random
+    int i = Helper.nextRandom(0, viaNodes.size() - 1);
     return viaNodes.get(i);
   }
 

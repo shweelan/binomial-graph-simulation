@@ -35,6 +35,10 @@ public class Helper {
     return serialize(arr);
   }
 
+  public static int nextRandom(int min, int max) {
+    return random.nextInt(max - min + 1) + min;
+  }
+
   // TODO build message class to serialize and deserialize
   public static byte[] buildMessage(int src, int dest, int chunkSize) {
     // [total message size, src, dest, data]
