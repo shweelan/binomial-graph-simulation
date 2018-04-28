@@ -2,20 +2,17 @@
 
 
 #On bash script
-DEL STARTED_<IP>
+// Showing the operator which server is running
 SETEX READY_<IP> 2 ""
 
-// BOOT MUST BE SETEX
+// BOOTING MUST BE SETEX
 
 while(GET BOOTING == null) {
   sleep 1
   SETEX READY_<IP> 2 ""
 }
 
-DEL READY_<IP>
-SET STARTING_<IP> ""
-
-INCRBY TOTAL_NODES <NUM_NODES YOU WILL START>
+INCRBY NUM_TOTAL_NODES <MY_NUM_NODES YOU WILL SPAWN>
 
 // WAITING THE BOOT TO START WILL HELP TO MAINTAIN FIXED NUMBER OF NODES
 
@@ -23,28 +20,30 @@ while(GET BOOT != null) {
   sleep 1
 }
 
-Start <NUM NODES> servers with different port for each
-DEL STARTING_<IP>
-SET STARTED_<IP>
-kill self
-
+Start <MY_NUM_NODES> servers with different port for each
+WAIT until java exits
+FLUSHALL
+LOOP
 
 
 #On each server
 start your listener with the port given
 RPUSH LISTENERS <IP:PORT>
 
-totalNodes = GET TOTAL_NODES
+totalNodes = GET NUM_TOTAL_NODES
 while(LLEN LISTENERS < totalNodes) {
   sleep 1
 }
 
-// HERE ALL THE SERVERS STATED, WE DONT NEED THE TOTAL NUMBER OF NODES
-DEL TOTAL_NODES
-
 Nodes = LRANGE LISTENERS 0 -1
 build graph for self
 Get all routes from self to nodes
+Set routes into listeners
+INCR NUM_READY_NODES
+while (GET NUM_READY_NODES < totlaNodes) {
+  sleep 1
+}
+// HERE ALL servers are running and all the routes are calculated
 start sending till timeout, or num messages achieved
 
 LREM LISTENERS <IP:PORT> 1

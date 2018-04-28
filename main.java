@@ -9,6 +9,7 @@ import bn.Controller;
 import bn.Server;
 import bn.DirectConnection;
 import bn.Helper;
+import bn.Route;
 
 class Main {
   private static String host;
@@ -18,11 +19,7 @@ class Main {
   private static int nMax;
   private static ArrayList<String> nodes;
   private static HashMap<Integer, HashSet<Integer>> binomialGraph;
-  private static HashMap<Integer, ArrayList<Integer>> routes;
-
-  private static void startServer() throws Exception {
-    Server.startServer(port);
-  }
+  private static HashMap<Integer, Route> routes;
 
   private static void buildBinomialGraphNetwork() throws Exception {
     if (nodes.size() < 2) {
@@ -57,30 +54,42 @@ class Main {
   }
 
   private static void calculateRoutes() {
-    routes = new HashMap<Integer, ArrayList<Integer>>();
-    routes.put(selfIndex, new ArrayList<Integer>());
-    //routes.get(selfIndex).add(selfIndex);
+    routes = new HashMap<Integer, Route>();
+    routes.put(selfIndex, new Route(selfIndex, selfIndex, 0, selfIndex));
+    HashMap<Integer, ArrayList<Integer>> paths = new HashMap<Integer, ArrayList<Integer>>();
+    paths.put(selfIndex, new ArrayList<Integer>());
     HashSet<Integer> visited = new HashSet<Integer>();
     Queue<Integer> queue = new LinkedList<Integer>();
     queue.add(selfIndex);
     while (!queue.isEmpty()) {
-      // TODO calculate routes for all parents, the first parent will be overused, i.e. calculate all possible routes, maybe different algo
-      Integer currentNode = queue.remove(); // parent
-      if (!visited.contains(currentNode)) {
-        HashSet<Integer> children = binomialGraph.get(currentNode);
-        ArrayList<Integer> currentRoute = routes.get(currentNode);
+      Integer parent = queue.remove(); // parent
+      if (!visited.contains(parent)) {
+        HashSet<Integer> children = binomialGraph.get(parent);
+        ArrayList<Integer> parentPath = paths.get(parent);
         for (Integer child : children) {
-          if (!routes.containsKey(child)) {
-            ArrayList<Integer> route = new ArrayList<Integer>();
-            for (Integer node : currentRoute) {
-              route.add(node);
-            }
-            route.add(child);
-            routes.put(child, route);
+          // TODO move inside if statement
+          ArrayList<Integer> path = new ArrayList<Integer>();
+          for (Integer node : parentPath) {
+            path.add(node);
           }
+          path.add(child);
+          System.out.println(selfIndex + " " + child + " " + path);
+          if (!routes.containsKey(child)) {
+            paths.put(child, path);
+            routes.put(child, new Route(selfIndex, child, path.size(), path.get(0)));
+          }
+          else {
+            // Already found route, try to add new possible route
+            Route route = routes.get(child);
+            if (route.getRouteLength() == parentPath.size() + 1) {
+              // Same length path
+              route.addViaNode(parentPath.get(0));
+            }
+          }
+          System.out.println(routes.get(child));
           queue.add(child);
         }
-        visited.add(currentNode);
+        visited.add(parent);
       }
     }
   }
@@ -92,7 +101,7 @@ class Main {
     System.out.println(nodes);
     System.out.println(routes);
 
-    // TODO read the config (message size, num messages | duration, ..)
+    // TODO read the config (message size, num messages | duration, ..) from redis
 
     HashMap<Integer, DirectConnection> connections = new HashMap<Integer, DirectConnection>();
 
@@ -103,28 +112,14 @@ class Main {
       connections.put(nodeNum, new DirectConnection(nodeNum, host, port));
     }
 
-    byte[] serializedSelfIndex = Helper.serialize(selfIndex);
-
-    HashMap<Integer, byte[]> serializedRoutes = new HashMap<Integer, byte[]>();
-    for (int i = 0; i < nodes.size(); i++) {
-      if (i != selfIndex) {
-        serializedRoutes.put(i, Helper.serialize(routes.get(i)));
-        //System.out.println(routes.get(i));
-        //Helper.bytesToHex(serializedRoutes.get(i));
-      }
-    }
-
+    int dest = routes.get(0).getRandomViaNode();
     int messageSize = 1024;
-    byte[] msg = Helper.buildMessage(serializedSelfIndex, serializedRoutes.get(25), messageSize);
+    byte[] msg = Helper.buildMessage(selfIndex, dest, messageSize);
     Helper.bytesToHex(msg);
     // TODO start a loop
     // TODO hash random data, send the data through the route
     Thread.sleep(5000);
     System.out.println("Simulation Ended");
-  }
-
-  private static void stopServer() throws Exception {
-    Server.stopServer();
   }
 
   private static void startBootBash() {
@@ -138,7 +133,7 @@ class Main {
       port = Integer.parseInt(args[1]);
       nMax = Integer.parseInt(args[2]);
       selfId = host + ":" + port;
-      startServer();
+      Server.startServer(port);
       controller.announceNode(selfId);
       int nodesCount = controller.getNodesCount();
       if (nodesCount < 2) {
@@ -147,11 +142,15 @@ class Main {
       while (controller.getAnnouncedNodesCount() < nodesCount) {
         Thread.sleep(1000);
       }
-      //controller.resetNodesCount();
       nodes = controller.getAnnouncedNodes();
       selfIndex = nodes.indexOf(selfId);
       buildBinomialGraphNetwork();
       calculateRoutes();
+      Server.setRoutes(routes);
+      controller.incReadyCount();
+      while (controller.getReadyCount() < nodesCount) {
+        Thread.sleep(1000);
+      }
       startSimulation();
       controller.delAnnouncedNode(selfId);
       while (controller.getAnnouncedNodesCount() > 0) {
@@ -159,7 +158,7 @@ class Main {
       }
     }
     finally {
-      stopServer();
+      Server.stopServer();
       startBootBash();
     }
   }

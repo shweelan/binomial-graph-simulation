@@ -12,7 +12,8 @@ public class Controller {
   private static final String REDIS_URL = "http://127.0.0.1:7379";
   private static final String SEPARATOR = "-_-";
   private static final String LISTENERS_ID = "LISTENERS";
-  private static final String NODES_COUNT_ID = "NUM_NODES";
+  private static final String NODES_COUNT_ID = "NUM_TOTAL_NODES";
+  private static final String READY_COUNT_ID = "NUM_READY_NODES";
 
   public static Controller init() {
     if (self == null) {
@@ -83,14 +84,6 @@ public class Controller {
     return Integer.parseInt(nodesCountStr);
   }
 
-  public void resetNodesCount() throws Exception {
-    String[] command = {
-      "DEL",
-      NODES_COUNT_ID
-    };
-    redisAPI(command);
-  }
-
   public ArrayList<String> getAnnouncedNodes() throws Exception {
     String[] command = {
       "LRANGE",
@@ -110,5 +103,25 @@ public class Controller {
       id
     };
     redisAPI(command);
+  }
+
+  public void incReadyCount() throws Exception {
+    String[] command = {
+      "INCR",
+      READY_COUNT_ID
+    };
+    redisAPI(command);
+  }
+
+  public int getReadyCount() throws Exception {
+    String[] command = {
+      "GET",
+      READY_COUNT_ID
+    };
+    String readyCountStr = redisAPI(command);
+    if (readyCountStr.equals("")) {
+      return 0;
+    }
+    return Integer.parseInt(readyCountStr);
   }
 }

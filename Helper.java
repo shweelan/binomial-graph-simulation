@@ -35,20 +35,20 @@ public class Helper {
     return serialize(arr);
   }
 
-  public static byte[] buildMessage(byte[] src, byte[] route, int chunkSize) {
-    // [total message size, src, route size, route, chunk]
-    int totalLength = 4 + src.length + 4 + route.length + chunkSize;
-    System.out.println(totalLength + " " + route.length);
+  // TODO build message class to serialize and deserialize
+  public static byte[] buildMessage(int src, int dest, int chunkSize) {
+    // [total message size, src, dest, data]
+    int totalLength = 12 + chunkSize;
     byte[] msg = new byte[totalLength];
     byte[] serializedTotalLength = serialize(totalLength);
-    byte[] serializedRouteSize = serialize(route.length);
+    byte[] serializedSrc = serialize(src);
+    byte[] serializedDest = serialize(dest);
     byte[] serializedChunk = new byte[chunkSize];
     random.nextBytes(serializedChunk);
     byte[][] parts = {
       serializedTotalLength,
-      src,
-      serializedRouteSize,
-      route,
+      serializedSrc,
+      serializedDest,
       serializedChunk
     };
     int bytesWritten = 0;

@@ -7,14 +7,17 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.util.ArrayList;
-
+import java.util.HashMap;
+import bn.Route;
 
 class ConnectionWorker implements Runnable {
   private Socket socket;
   private String id;
+  private HashMap<Integer, Route> routes;
 
-  public ConnectionWorker(Socket socket) {
+  public ConnectionWorker(Socket socket, HashMap<Integer, Route> routes) {
     this.socket = socket;
+    this.routes = routes;
     this.id = this.socket.getInetAddress() + ":" + String.valueOf(this.socket.getPort());
     System.out.println("Connection `" + this.id + "` connected!");
   }
@@ -26,7 +29,7 @@ class ConnectionWorker implements Runnable {
         String inputLine;
         while ((inputLine = inputStream.readLine()) != null) {
           // TODO statistics, routing
-          // TODO ask for ping pong to measure latencies
+          // TODO USE TS from redis for latencies
           // TODO deal with bytes
           System.out.println(inputLine);
           if (inputLine.equals("bye")) {
@@ -56,6 +59,7 @@ class ConnectionWorker implements Runnable {
 
 class ServerWorker implements Runnable {
   private ServerSocket server = null;
+  HashMap<Integer, Route> routes = null;
   private ArrayList<ConnectionWorker> workers;
 
   public ServerWorker(int port) throws Exception {
@@ -68,7 +72,7 @@ class ServerWorker implements Runnable {
     try {
       while (true) {
         Socket socket = server.accept();
-        ConnectionWorker worker = new ConnectionWorker(socket);
+        ConnectionWorker worker = new ConnectionWorker(socket, routes);
         Thread thread = new Thread(worker);
         thread.start();
         workers.add(worker);
@@ -80,6 +84,10 @@ class ServerWorker implements Runnable {
         e.printStackTrace();
       }
     }
+  }
+
+  public void setRoutes(HashMap<Integer, Route> routes) {
+    this.routes = routes;
   }
 
   public void stop() throws Exception {
@@ -104,5 +112,9 @@ public class Server {
 
   public static void stopServer() throws Exception {
     worker.stop();
+  }
+
+  public static void setRoutes(HashMap<Integer, Route> routes) {
+    worker.setRoutes(routes);
   }
 }
