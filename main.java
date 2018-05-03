@@ -8,10 +8,11 @@ import java.util.Queue;
 import bn.Controller;
 import bn.Server;
 import bn.DirectConnection;
-import bn.Helper;
+import bn.Message;
 import bn.Route;
 
 class Main {
+  private static Controller controller = Controller.init();
   private static String host;
   private static int port;
   private static String selfId;
@@ -26,7 +27,6 @@ class Main {
       throw new Exception("ERROR! Number of nodes in network < 2");
     }
     int numNodes = nodes.size();
-    // TODO Enable if duplex, final double powerBase = Math.pow(numNodes * 1.0, (2.0 / (nMax * 1.0)));
     final double powerBase = Math.pow(numNodes, 1.0 / nMax);
     int i = 0;
     binomialGraph = new HashMap<Integer, HashSet<Integer>>();
@@ -114,8 +114,9 @@ class Main {
 
     int dest = routes.get(0).getRandomViaNode();
     int messageSize = 1024;
-    byte[] msg = Helper.buildMessage(selfIndex, dest, messageSize);
-    Helper.bytesToHex(msg);
+    long ts = controller.getTimestamp();
+    byte[] msg = new Message(selfIndex, dest, ts, messageSize).serialize();
+    Message.printInHex(msg);
     // TODO start a loop
     // TODO hash random data, send the data through the route
     Thread.sleep(5000);
@@ -128,7 +129,6 @@ class Main {
 
   public static void main(String args[]) throws Exception {
     try {
-      Controller controller = Controller.init();
       host = args[0];
       port = Integer.parseInt(args[1]);
       nMax = Integer.parseInt(args[2]);

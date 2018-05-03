@@ -14,6 +14,7 @@ public class Controller {
   private static final String LISTENERS_ID = "LISTENERS";
   private static final String NODES_COUNT_ID = "NUM_TOTAL_NODES";
   private static final String READY_COUNT_ID = "NUM_READY_NODES";
+  private static Long timestampDiff = null;
 
   public static Controller init() {
     if (self == null) {
@@ -123,5 +124,20 @@ public class Controller {
       return 0;
     }
     return Integer.parseInt(readyCountStr);
+  }
+
+  public long getTimestamp() throws Exception {
+    long ts = System.currentTimeMillis();
+    if (timestampDiff == null) {
+      String[] command = {
+        "TIME"
+      };
+      String[] time = redisAPI(command).split(SEPARATOR);
+      long rtt = System.currentTimeMillis() - ts;
+      ts += rtt / 2;
+      long remoteTs = (new Long(time[0]) * 1000 + new Long(time[1]) / 1000);
+      timestampDiff = remoteTs - ts;
+    }
+    return ts + timestampDiff;
   }
 }
