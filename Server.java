@@ -3,7 +3,7 @@ package bn;
 import java.net.Socket;
 import java.net.ServerSocket;
 import java.net.SocketException;
-import java.io.BufferedReader;
+import java.io.BufferedInputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,15 +24,14 @@ class ConnectionWorker implements Runnable {
 
   public void run() {
     try {
-      BufferedReader inputStream = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
+      BufferedInputStream inputStream = new BufferedInputStream(this.socket.getInputStream());
       try {
-        String inputLine;
-        while ((inputLine = inputStream.readLine()) != null) {
+        while (true) {
+          Message msg = new Message(inputStream);
           // TODO statistics, routing
-          // TODO USE TS from redis for latencies
-          // TODO deal with bytes
-          System.out.println(inputLine);
-          if (inputLine.equals("bye")) {
+          // TODO USE TS for latencies
+          Message.printInHex(msg.serialize());
+          if (msg.isDataEnd()) {
             break;
           }
         }

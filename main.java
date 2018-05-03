@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.io.ByteArrayInputStream;
 import bn.Controller;
 import bn.Server;
 import bn.DirectConnection;
@@ -116,9 +117,14 @@ class Main {
     int messageSize = 1024;
     long ts = controller.getTimestamp();
     byte[] msg = new Message(selfIndex, dest, ts, messageSize).serialize();
-    Message.printInHex(msg);
     // TODO start a loop
     // TODO hash random data, send the data through the route
+    // TODO remove
+    Message.printInHex(msg);
+    ByteArrayInputStream is = new ByteArrayInputStream(msg);
+    byte[] msgCopy = new Message(is).serialize();
+    Message.printInHex(msg);
+    is.close();
     Thread.sleep(5000);
     System.out.println("Simulation Ended");
   }

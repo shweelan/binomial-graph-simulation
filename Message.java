@@ -4,13 +4,15 @@ import java.util.Random;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.lang.System;
+import java.io.InputStream;
 
 public class Message {
   private static Random random = new Random();
+  private static final int HEADER_LENGTH = Long.BYTES + 3 * Integer.BYTES;
+  private long timestamp;
   private int source;
   private int destination;
   private byte[] data;
-  private long timestamp;
 
   public Message(int src, int dest, long ts, int size) {
     data = new byte[size];
@@ -20,24 +22,41 @@ public class Message {
     timestamp = ts;
   }
 
+  public Message(InputStream inputStream) throws Exception {
+    byte[] header = new byte[HEADER_LENGTH];
+    int read = inputStream.read(header, 0, header.length);
+    // TODO check read == HEADER_LENGTH
+    ByteBuffer bb = ByteBuffer.allocate(header.length).order(ByteOrder.BIG_ENDIAN);
+    bb.put(header);
+    bb.rewind();
+    timestamp = bb.getLong();
+    source = bb.getInt();
+    destination = bb.getInt();
+    int dataSize = bb.getInt();
+    // TODO if dataSize == -1 then its dataEnd
+    data = new byte[dataSize];
+    read = inputStream.read(data, 0, data.length);
+    // TODO check read == dataSize
+  }
+
   public void setTimestamp(long ts) {
     timestamp = ts;
   }
 
   public byte[] serialize() {
-    // [totalLength(int), source(int), destination(int), timestamp(long)]
-    int headerLength = 3 * Integer.BYTES + Long.BYTES;
-    int totalLength = headerLength + data.length;
-    ByteBuffer bb = ByteBuffer.allocate(headerLength).order(ByteOrder.BIG_ENDIAN);
-    bb.putInt(totalLength);
+    // [source(int), destination(int), timestamp(long), dataSize(int), data(bytes)]
+    int totalLength = HEADER_LENGTH + data.length;
+    ByteBuffer bb = ByteBuffer.allocate(totalLength).order(ByteOrder.BIG_ENDIAN);
+    bb.putLong(timestamp);
     bb.putInt(source);
     bb.putInt(destination);
-    bb.putLong(timestamp);
-    byte[] header = bb.array();
-    byte[] msg = new byte[totalLength];
-    System.arraycopy(header, 0, msg, 0, header.length);
-    System.arraycopy(data, 0, msg, header.length, data.length);
-    return msg;
+    bb.putInt(data.length);
+    bb.put(data);
+    return bb.array();
+  }
+
+  public boolean isDataEnd() {
+    return false;
   }
 
   // TODO remove
