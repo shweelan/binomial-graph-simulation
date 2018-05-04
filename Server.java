@@ -10,12 +10,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import bn.Route;
 
-class ConnectionWorker implements Runnable {
+class InConnectionWorker implements Runnable {
   private Socket socket;
   private String id;
   private HashMap<Integer, Route> routes;
 
-  public ConnectionWorker(Socket socket, HashMap<Integer, Route> routes) {
+  public InConnectionWorker(Socket socket, HashMap<Integer, Route> routes) {
     this.socket = socket;
     this.routes = routes;
     this.id = this.socket.getInetAddress() + ":" + String.valueOf(this.socket.getPort());
@@ -27,11 +27,11 @@ class ConnectionWorker implements Runnable {
       BufferedInputStream inputStream = new BufferedInputStream(this.socket.getInputStream());
       try {
         while (true) {
-          Message msg = new Message(inputStream);
+          Message message = new Message(inputStream);
           // TODO statistics, routing
           // TODO USE TS for latencies
-          Message.printInHex(msg.serialize());
-          if (msg.isDataEnd()) {
+          Message.printInHex(message.serialize());
+          if (message.isDataEnd()) {
             break;
           }
         }
@@ -59,19 +59,19 @@ class ConnectionWorker implements Runnable {
 class ServerWorker implements Runnable {
   private ServerSocket server = null;
   HashMap<Integer, Route> routes = null;
-  private ArrayList<ConnectionWorker> workers;
+  private ArrayList<InConnectionWorker> workers;
 
   public ServerWorker(int port) throws Exception {
     server = new ServerSocket(port);
     System.out.println("Server listening on port " + server.getLocalPort());
-    workers = new ArrayList<ConnectionWorker>();
+    workers = new ArrayList<InConnectionWorker>();
   }
 
   public void run() {
     try {
       while (true) {
         Socket socket = server.accept();
-        ConnectionWorker worker = new ConnectionWorker(socket, routes);
+        InConnectionWorker worker = new InConnectionWorker(socket, routes);
         Thread thread = new Thread(worker);
         thread.start();
         workers.add(worker);
@@ -92,7 +92,7 @@ class ServerWorker implements Runnable {
   public void stop() throws Exception {
     if (server != null) {
       server.close();
-      for (ConnectionWorker worker : workers) {
+      for (InConnectionWorker worker : workers) {
         worker.stop();
       }
     }
@@ -100,12 +100,12 @@ class ServerWorker implements Runnable {
 }
 
 public class Server {
-  private static Thread thread;
   private static ServerWorker worker;
 
   public static void startServer(int port) throws Exception {
+    // TODO check if server started(worker != null)
     worker = new ServerWorker(port);
-    thread = new Thread(worker);
+    Thread thread = new Thread(worker);
     thread.start();
   }
 

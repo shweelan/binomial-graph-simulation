@@ -27,8 +27,9 @@ public class Message {
     int read = inputStream.read(header, 0, header.length);
     // TODO check read == HEADER_LENGTH
     ByteBuffer bb = ByteBuffer.allocate(header.length).order(ByteOrder.BIG_ENDIAN);
+    bb.clear();
     bb.put(header);
-    bb.rewind();
+    bb.flip(); // rewind
     timestamp = bb.getLong();
     source = bb.getInt();
     destination = bb.getInt();

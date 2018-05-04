@@ -46,7 +46,6 @@ class Main {
         target = target % numNodes;
         if (target != i) {
           links.add(target);
-          // TODO Ask if we need to add it as duplex channel.
         }
         j++;
       }
@@ -116,14 +115,14 @@ class Main {
     int dest = routes.get(0).getRandomViaNode();
     int messageSize = 1024;
     long ts = controller.getTimestamp();
-    byte[] msg = new Message(selfIndex, dest, ts, messageSize).serialize();
+    byte[] message = new Message(selfIndex, dest, ts, messageSize).serialize();
     // TODO start a loop
     // TODO hash random data, send the data through the route
     // TODO remove
-    Message.printInHex(msg);
-    ByteArrayInputStream is = new ByteArrayInputStream(msg);
-    byte[] msgCopy = new Message(is).serialize();
-    Message.printInHex(msg);
+    Message.printInHex(message);
+    ByteArrayInputStream is = new ByteArrayInputStream(message);
+    byte[] messageCopy = new Message(is).serialize();
+    Message.printInHex(message);
     is.close();
     Thread.sleep(5000);
     System.out.println("Simulation Ended");
