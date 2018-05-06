@@ -62,6 +62,7 @@ class ServerWorker implements Runnable {
   private ArrayList<InConnectionWorker> workers;
 
   public ServerWorker(int port) throws Exception {
+    System.out.println("Trying to start server on port " + port);
     server = new ServerSocket(port);
     System.out.println("Server listening on port " + server.getLocalPort());
     workers = new ArrayList<InConnectionWorker>();
