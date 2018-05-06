@@ -128,10 +128,6 @@ class Main {
     System.out.println("Simulation Ended");
   }
 
-  private static void startBootBash() {
-    // TODO implement or block bash script till java exits then loop again.
-  }
-
   public static void main(String args[]) throws Exception {
     try {
       host = args[0];
@@ -162,9 +158,11 @@ class Main {
         Thread.sleep(1000);
       }
     }
+    catch (Exception e) {
+      e.printStackTrace();
+    }
     finally {
       Server.stopServer();
-      startBootBash();
     }
   }
 }

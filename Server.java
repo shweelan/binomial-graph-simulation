@@ -110,7 +110,7 @@ public class Server {
   }
 
   public static void stopServer() throws Exception {
-    worker.stop();
+    if (worker != null) worker.stop();
   }
 
   public static void setRoutes(HashMap<Integer, Route> routes) {
