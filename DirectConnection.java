@@ -43,6 +43,7 @@ class OutConnectionWorker implements Runnable {
   }
 
   public void stop() throws Exception {
+    // TODO Send bye
     socket.close();
   }
 }

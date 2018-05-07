@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.lang.System;
 import java.io.InputStream;
+import java.io.EOFException;
 
 public class Message {
   private static Random random = new Random();
@@ -25,7 +26,12 @@ public class Message {
   public Message(InputStream inputStream) throws Exception {
     byte[] header = new byte[HEADER_LENGTH];
     int read = inputStream.read(header, 0, header.length);
-    // TODO check read == HEADER_LENGTH
+    if (read < 0) {
+      throw new EOFException();
+    }
+    else if (read != HEADER_LENGTH) {
+      throw new Exception("ERROR! Bad message header");
+    }
     ByteBuffer bb = ByteBuffer.allocate(header.length).order(ByteOrder.BIG_ENDIAN);
     bb.clear();
     bb.put(header);
@@ -37,7 +43,9 @@ public class Message {
     // TODO if dataSize == -1 then its dataEnd
     data = new byte[dataSize];
     read = inputStream.read(data, 0, data.length);
-    // TODO check read == dataSize
+    if (read != data.length) {
+      throw new Exception("ERROR! Bad message");
+    }
   }
 
   public void setTimestamp(long ts) {

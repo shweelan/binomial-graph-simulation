@@ -6,6 +6,7 @@ import java.net.SocketException;
 import java.io.BufferedInputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
+import java.io.EOFException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import bn.Route;
@@ -37,7 +38,7 @@ class InConnectionWorker implements Runnable {
         }
       }
       catch (Exception e) {
-        if (!(e instanceof SocketException)) {
+        if (!(e instanceof SocketException) && !(e instanceof EOFException)) {
           e.printStackTrace();
         }
       }
