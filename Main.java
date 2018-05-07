@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.io.ByteArrayInputStream;
+import java.util.Random;
 import bn.Controller;
 import bn.Server;
 import bn.DirectConnection;
@@ -102,6 +103,8 @@ class Main {
     System.out.println(routes);
 
     // TODO read the config (message size, num messages | duration, ..) from redis
+    int messageSize = 1024;
+    long numMessages = 200;
 
     HashMap<Integer, DirectConnection> connections = new HashMap<Integer, DirectConnection>();
 
@@ -112,17 +115,25 @@ class Main {
       connections.put(nodeNum, new DirectConnection(nodeNum, host, port));
     }
 
-    // TODO start a loop
-    // TODO hash random data, send the data through the route
-    int dest = routes.get(0).getRandomViaNode();
-    int messageSize = 1024;
-    for (DirectConnection connection : connections.values()) {
+    Random random = new Random();
+    long messagesSent = 0;
+
+    while (messagesSent < numMessages) {
+      int dest = random.nextInt(nodes.size());
+      if (dest == selfIndex) continue;
       long ts = controller.getTimestamp();
-      Message message = new Message(selfIndex, connection.getRemoteNodeNumber(), ts, messageSize);
-      connection.sendMessage(message);
+      Message message = new Message(selfIndex, dest, ts, messageSize);
+      int nextHop = routes.get(dest).getRandomViaNode();
+      DirectConnection connection = connections.get(nextHop);
+      if (!connection.sendMessage(message)) {
+        if (!connection.sendMessage(message, null)) continue; // Blocking
+      }
+      messagesSent++;
+    }
+
+    for (DirectConnection connection : connections.values()) {
       connection.close();
     }
-    Thread.sleep(5000);
     System.out.println("Simulation Ended");
   }
 
