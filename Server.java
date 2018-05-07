@@ -32,13 +32,13 @@ class InConnectionWorker implements Runnable {
           // TODO statistics, routing
           // TODO USE TS for latencies
           Message.printInHex(message.serialize());
-          if (message.isDataEnd()) {
+          if (message.isGoodBye()) {
             break;
           }
         }
       }
       catch (Exception e) {
-        if (!(e instanceof EOFException)) {
+        if (!(e instanceof SocketException) && !(e instanceof EOFException)) {
           e.printStackTrace();
         }
       }
@@ -93,8 +93,8 @@ class ServerWorker implements Runnable {
 
   public void stop() throws Exception {
     if (server != null) {
-      System.out.println("Closing server");
       server.close();
+      System.out.println("Server Closed");
       for (InConnectionWorker worker : workers) {
         worker.stop();
       }

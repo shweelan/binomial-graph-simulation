@@ -27,6 +27,9 @@ class OutConnectionWorker implements Runnable {
           message.setTimestamp(controller.getTimestamp());
           outputStream.write(message.serialize());
           outputStream.flush();
+          if (message.isGoodBye()) {
+            break;
+          }
         }
       } catch(Exception e) {
         if (!(e instanceof SocketException)) {
@@ -40,11 +43,6 @@ class OutConnectionWorker implements Runnable {
     } catch(Exception e) {
       e.printStackTrace();
     }
-  }
-
-  public void stop() throws Exception {
-    // TODO Send bye
-    socket.close();
   }
 }
 
@@ -82,7 +80,8 @@ public class DirectConnection {
   }
 
   public void close() throws Exception {
-    worker.stop();
+    Message poison = new Message();
+    queue.offer(poison);
     System.out.println("Disconnected from Node#" + remoteNodeNumber);
   }
 }

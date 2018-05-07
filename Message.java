@@ -9,19 +9,33 @@ import java.io.EOFException;
 
 public class Message {
   private static Random random = new Random();
-  private static final int HEADER_LENGTH = Long.BYTES + 3 * Integer.BYTES;
+  private static final int HEADER_LENGTH = Long.BYTES + 4 * Integer.BYTES;
+  public static enum Type {
+    DATA,
+    BYE // to disconnect
+  };
+  private Type type;
   private long timestamp;
   private int source;
   private int destination;
   private byte[] data;
 
   public Message(int src, int dest, long ts, int size) {
+    type = Type.DATA;
     data = new byte[size];
     random.nextBytes(data);
     source = src;
     destination = dest;
     timestamp = ts;
   }
+
+  public Message() {
+    // Empty message means BYE
+    type = Type.BYE;
+    data = new byte[0];
+  }
+
+  // TODO add error messages
 
   public Message(InputStream inputStream) throws Exception {
     byte[] header = new byte[HEADER_LENGTH];
@@ -37,10 +51,10 @@ public class Message {
     bb.put(header);
     bb.flip(); // rewind
     timestamp = bb.getLong();
+    type = Type.values()[bb.getInt()];
     source = bb.getInt();
     destination = bb.getInt();
     int dataSize = bb.getInt();
-    // TODO if dataSize == -1 then its dataEnd
     data = new byte[dataSize];
     read = inputStream.read(data, 0, data.length);
     if (read != data.length) {
@@ -57,15 +71,18 @@ public class Message {
     int totalLength = HEADER_LENGTH + data.length;
     ByteBuffer bb = ByteBuffer.allocate(totalLength).order(ByteOrder.BIG_ENDIAN);
     bb.putLong(timestamp);
+    bb.putInt(type.ordinal());
     bb.putInt(source);
     bb.putInt(destination);
     bb.putInt(data.length);
-    bb.put(data);
+    if (data.length > 0) {
+      bb.put(data);
+    }
     return bb.array();
   }
 
-  public boolean isDataEnd() {
-    return false;
+  public boolean isGoodBye() {
+    return type == Type.BYE;
   }
 
   // TODO remove
