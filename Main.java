@@ -116,18 +116,13 @@ class Main {
     // TODO hash random data, send the data through the route
     int dest = routes.get(0).getRandomViaNode();
     int messageSize = 1024;
-    long ts = controller.getTimestamp();
-    Message message = new Message(selfIndex, dest, ts, messageSize);
-    // TODO remove
-    System.out.println(message);
-    ByteArrayInputStream is = new ByteArrayInputStream(message.serialize());
-    Message messageCopy = new Message(is);
-    System.out.println(messageCopy);
-    is.close();
-    Thread.sleep(5000);
     for (DirectConnection connection : connections.values()) {
+      long ts = controller.getTimestamp();
+      Message message = new Message(selfIndex, connection.getRemoteNodeNumber(), ts, messageSize);
+      connection.sendMessage(message);
       connection.close();
     }
+    Thread.sleep(5000);
     System.out.println("Simulation Ended");
   }
 

@@ -25,6 +25,7 @@ class OutConnectionWorker implements Runnable {
         while (true) {
           Message message = queue.take(); // Blocking
           message.setTimestamp(controller.getTimestamp());
+          System.out.println("OUTGOING MESSAGE: " + message);
           outputStream.write(message.serialize());
           outputStream.flush();
           if (message.isGoodBye()) {
@@ -77,6 +78,10 @@ public class DirectConnection {
       timeout = QUEUE_OVERFLOW_BLOCK_TIMEOUT;
     }
     return queue.offer(message, timeout, TimeUnit.MILLISECONDS); // Blocking
+  }
+
+  public int getRemoteNodeNumber() {
+    return remoteNodeNumber;
   }
 
   public void close() throws Exception {
