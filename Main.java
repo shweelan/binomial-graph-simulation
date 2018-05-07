@@ -112,17 +112,17 @@ class Main {
       connections.put(nodeNum, new DirectConnection(nodeNum, host, port));
     }
 
+    // TODO start a loop
+    // TODO hash random data, send the data through the route
     int dest = routes.get(0).getRandomViaNode();
     int messageSize = 1024;
     long ts = controller.getTimestamp();
-    byte[] message = new Message(selfIndex, dest, ts, messageSize).serialize();
-    // TODO start a loop
-    // TODO hash random data, send the data through the route
+    Message message = new Message(selfIndex, dest, ts, messageSize);
     // TODO remove
-    Message.printInHex(message);
-    ByteArrayInputStream is = new ByteArrayInputStream(message);
-    byte[] messageCopy = new Message(is).serialize();
-    Message.printInHex(message);
+    System.out.println(message);
+    ByteArrayInputStream is = new ByteArrayInputStream(message.serialize());
+    Message messageCopy = new Message(is);
+    System.out.println(messageCopy);
     is.close();
     Thread.sleep(5000);
     for (DirectConnection connection : connections.values()) {

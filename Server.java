@@ -31,7 +31,7 @@ class InConnectionWorker implements Runnable {
           Message message = new Message(inputStream);
           // TODO statistics, routing
           // TODO USE TS for latencies
-          Message.printInHex(message.serialize());
+          System.out.println(message);
           if (message.isGoodBye()) {
             break;
           }
@@ -106,7 +106,6 @@ public class Server {
   private static ServerWorker worker;
 
   public static void startServer(int port) throws Exception {
-    // TODO check if server started(worker != null)
     worker = new ServerWorker(port);
     Thread thread = new Thread(worker);
     thread.start();

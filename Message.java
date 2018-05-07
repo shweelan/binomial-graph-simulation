@@ -85,6 +85,10 @@ public class Message {
     return type == Type.BYE;
   }
 
+  public String toString() {
+    return "{type: " + type + ", timestamp: " + timestamp + ", source: " + source + ", destination: " + destination + ", data-size: " + data.length + "}";
+  }
+
   // TODO remove
   private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
   public static void printInHex(byte[] bytes) {

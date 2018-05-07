@@ -29,7 +29,7 @@ redis_api() {
   echo "$redis_api_ret"
 }
 
-# TODO install git and java and pull the code and build it with make
+# TODO install git and java
 
 cd "$working_dir"
 if [ ! -d "$clone_dir_name" ] ; then
