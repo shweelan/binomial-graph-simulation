@@ -92,6 +92,7 @@ class ServerWorker implements Runnable {
 
   public void stop() throws Exception {
     if (server != null) {
+      System.out.println("Closing server");
       server.close();
       for (InConnectionWorker worker : workers) {
         worker.stop();

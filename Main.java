@@ -125,6 +125,9 @@ class Main {
     Message.printInHex(message);
     is.close();
     Thread.sleep(5000);
+    for (DirectConnection connection : connections.values()) {
+      connection.close();
+    }
     System.out.println("Simulation Ended");
   }
 
