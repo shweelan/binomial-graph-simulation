@@ -61,12 +61,12 @@ public class DirectConnection {
     remoteNodeNumber = nodeNum;
     remoteHost = host;
     remotePort = port;
-    //socket = new Socket(host, port);
+    socket = new Socket(host, port);
     System.out.println("Connected to Node#" + remoteNodeNumber);
     queue = new LinkedBlockingDeque<Message>();
-    //worker = new OutConnectionWorker(socket, queue);
-    //Thread thread = new Thread(worker);
-    //thread.start();
+    worker = new OutConnectionWorker(socket, queue);
+    Thread thread = new Thread(worker);
+    thread.start();
   }
 
   public boolean sendMessage(Message message) {
