@@ -38,7 +38,7 @@ class InConnectionWorker implements Runnable {
         }
       }
       catch (Exception e) {
-        if (!(e instanceof SocketException) && !(e instanceof EOFException)) {
+        if (!(e instanceof EOFException)) {
           e.printStackTrace();
         }
       }

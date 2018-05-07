@@ -6,7 +6,7 @@ bootstrap_key="BOOT"
 redis_url="http://127.0.0.1:7379"
 # TODO change it for linux hostname -I
 ip="$(ifconfig en1 inet | tail -1 | cut -d ' ' -f 2)"
-num_nodes_per_machine="5"
+num_nodes_per_machine="10"
 starting_port="2912"
 total_nodes_key="NUM_TOTAL_NODES"
 ready_nodes_key="NUM_READY_NODES"
