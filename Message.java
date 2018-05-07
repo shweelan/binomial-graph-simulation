@@ -86,7 +86,12 @@ public class Message {
   }
 
   public String toString() {
-    return "{type: " + type + ", timestamp: " + timestamp + ", source: " + source + ", destination: " + destination + ", data-size: " + data.length + "}";
+    String str = "{type: " + type + ", timestamp: " + timestamp;
+    if (type != Type.BYE) {
+      str += ", source: " + source + ", destination: " + destination + ", data-size: " + data.length;
+    }
+    str += "}";
+    return str;
   }
 
   // TODO remove
