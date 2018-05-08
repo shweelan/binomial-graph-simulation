@@ -120,6 +120,7 @@ class Main {
     // reportIncomming(message);
     if (message.getDestination() != selfIndex) {
       while (!sendMessage(message));
+      System.out.println("FORWARD MESSAGE:" + message);
     }
   }
 
