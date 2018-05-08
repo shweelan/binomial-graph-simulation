@@ -96,6 +96,17 @@ class Main {
     }
   }
 
+  private static void openConnections() throws Exception {
+    connections = new HashMap<Integer, DirectConnection>();
+
+    for (int nodeNum : binomialGraph.get(selfIndex)) {
+      String[] split = nodes.get(nodeNum).split(":");
+      String host = split[0];
+      int port = Integer.parseInt(split[1]);
+      connections.put(nodeNum, new DirectConnection(nodeNum, host, port));
+    }
+  }
+
   private static boolean sendMessage(Message message) {
     final int destination = message.getDestination();
     final int nextHop = routes.get(destination).getRandomViaNode();
@@ -122,15 +133,6 @@ class Main {
     // TODO read the config (message size, num messages | duration, ..) from redis
     int messageSize = 1024;
     long numMessages = 200;
-
-    connections = new HashMap<Integer, DirectConnection>();
-
-    for (int nodeNum : binomialGraph.get(selfIndex)) {
-      String[] split = nodes.get(nodeNum).split(":");
-      String host = split[0];
-      int port = Integer.parseInt(split[1]);
-      connections.put(nodeNum, new DirectConnection(nodeNum, host, port));
-    }
 
     Random random = new Random();
     long messagesSent = 0;
@@ -169,6 +171,7 @@ class Main {
       selfIndex = nodes.indexOf(selfId);
       buildBinomialGraphNetwork();
       calculateRoutes();
+      openConnections();
       controller.incReadyCount();
       while (controller.getReadyCount() < nodesCount) {
         Thread.sleep(1000);
