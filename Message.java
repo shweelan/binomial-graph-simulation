@@ -9,7 +9,7 @@ import java.io.EOFException;
 
 public class Message {
   private static Random random = new Random();
-  private static final int HEADER_LENGTH = Long.BYTES + 4 * Integer.BYTES;
+  private static final int HEADER_LENGTH = Long.BYTES + 5 * Integer.BYTES;
   public static enum Type {
     DATA,
     BYE // to disconnect
@@ -18,6 +18,7 @@ public class Message {
   private long timestamp;
   private int source;
   private int destination;
+  private int numHops;
   private byte[] data;
 
   public Message(int src, int dest, long ts, int size) {
@@ -26,6 +27,7 @@ public class Message {
     random.nextBytes(data);
     source = src;
     destination = dest;
+    numHops = 0;
     timestamp = ts;
   }
 
@@ -54,6 +56,7 @@ public class Message {
     type = Type.values()[bb.getInt()];
     source = bb.getInt();
     destination = bb.getInt();
+    numHops = bb.getInt();
     int dataSize = bb.getInt();
     data = new byte[dataSize];
     read = inputStream.read(data, 0, data.length);
@@ -66,8 +69,16 @@ public class Message {
     timestamp = ts;
   }
 
+  public void incNumHops() {
+    numHops++;
+  }
+
   public long getTimestamp() {
     return timestamp;
+  }
+
+  public int getNumHops() {
+    return numHops;
   }
 
   public int getDestination() {
@@ -86,6 +97,7 @@ public class Message {
     bb.putInt(type.ordinal());
     bb.putInt(source);
     bb.putInt(destination);
+    bb.putInt(numHops);
     bb.putInt(data.length);
     if (data.length > 0) {
       bb.put(data);
@@ -100,7 +112,7 @@ public class Message {
   public String toString() {
     String str = "{type: " + type + ", timestamp: " + timestamp;
     if (type != Type.BYE) {
-      str += ", source: " + source + ", destination: " + destination + ", data-size: " + data.length;
+      str += ", source: " + source + ", destination: " + destination + ", num-hops: " + numHops + ", data-size: " + data.length;
     }
     str += "}";
     return str;

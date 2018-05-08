@@ -24,7 +24,10 @@ class OutConnectionWorker implements Runnable {
       try {
         while (true) {
           Message message = queue.take(); // Blocking
-          message.setTimestamp(controller.getTimestamp());
+          if (message.getNumHops() == 0) {
+            message.setTimestamp(controller.getTimestamp());
+          }
+          message.incNumHops();
           System.out.println("OUTGOING MESSAGE: " + message);
           outputStream.write(message.serialize());
           outputStream.flush();
