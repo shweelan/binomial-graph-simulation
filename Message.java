@@ -66,6 +66,18 @@ public class Message {
     timestamp = ts;
   }
 
+  public long getTimestamp() {
+    return timestamp;
+  }
+
+  public int getDestination() {
+    return destination;
+  }
+
+  public int getSource() {
+    return source;
+  }
+
   public byte[] serialize() {
     // [source(int), destination(int), timestamp(long), dataSize(int), data(bytes)]
     int totalLength = HEADER_LENGTH + data.length;

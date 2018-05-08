@@ -73,11 +73,12 @@ public class DirectConnection {
     return queue.offer(message);
   }
 
-  public boolean sendMessage(Message message, Long timeout) throws Exception {
-    if (timeout == null) {
-      timeout = QUEUE_OVERFLOW_BLOCK_TIMEOUT;
+  public boolean sendBlockingMessage(Message message) {
+    try {
+      return queue.offer(message, QUEUE_OVERFLOW_BLOCK_TIMEOUT, TimeUnit.MILLISECONDS); // Blocking
+    } catch(InterruptedException e) {
+      return false;
     }
-    return queue.offer(message, timeout, TimeUnit.MILLISECONDS); // Blocking
   }
 
   public int getRemoteNodeNumber() {

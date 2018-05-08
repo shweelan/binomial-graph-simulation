@@ -11,7 +11,7 @@ import bn.Controller;
 import bn.Server;
 import bn.DirectConnection;
 import bn.Message;
-import bn.Route;
+import bn.MessageRouter;
 
 class Main {
   private static Controller controller = Controller.init();
@@ -23,6 +23,7 @@ class Main {
   private static ArrayList<String> nodes;
   private static HashMap<Integer, HashSet<Integer>> binomialGraph;
   private static HashMap<Integer, Route> routes;
+  private static HashMap<Integer, DirectConnection> connections;
 
   private static void buildBinomialGraphNetwork() throws Exception {
     if (nodes.size() < 2) {
@@ -95,7 +96,23 @@ class Main {
     }
   }
 
-  public static void startSimulation() throws Exception {
+  private static boolean sendMessage(Message message) {
+    final int destination = message.getDestination();
+    final int nextHop = routes.get(destination).getRandomViaNode();
+    DirectConnection connection = connections.get(nextHop);
+    // TODO throw Exception if connection == null
+    // try non-blocking then blocking send
+    return connection.sendMessage(message) || connection.sendBlockingMessage(message);
+  }
+
+  private static void route(Message message) {
+    // reportIncomming(message);
+    if (message.getDestination() != selfIndex) {
+      while (!sendMessage(message));
+    }
+  }
+
+  private static void startSimulation() throws Exception {
     System.out.println("Simulation Started");
     System.out.println(selfIndex);
     System.out.println(binomialGraph);
@@ -106,7 +123,7 @@ class Main {
     int messageSize = 1024;
     long numMessages = 200;
 
-    HashMap<Integer, DirectConnection> connections = new HashMap<Integer, DirectConnection>();
+    connections = new HashMap<Integer, DirectConnection>();
 
     for (int nodeNum : binomialGraph.get(selfIndex)) {
       String[] split = nodes.get(nodeNum).split(":");
@@ -119,16 +136,11 @@ class Main {
     long messagesSent = 0;
 
     while (messagesSent < numMessages) {
-      int dest = random.nextInt(nodes.size());
-      if (dest == selfIndex) continue;
+      int destination = random.nextInt(nodes.size());
+      if (destination == selfIndex) continue;
       long ts = controller.getTimestamp();
-      Message message = new Message(selfIndex, dest, ts, messageSize);
-      int nextHop = routes.get(dest).getRandomViaNode();
-      DirectConnection connection = connections.get(nextHop);
-      if (!connection.sendMessage(message)) {
-        if (!connection.sendMessage(message, null)) continue; // Blocking
-      }
-      messagesSent++;
+      Message message = new Message(selfIndex, destination, ts, messageSize);
+      if (sendMessage(message)) messagesSent++;
     }
 
     for (DirectConnection connection : connections.values()) {
@@ -143,7 +155,8 @@ class Main {
       port = Integer.parseInt(args[1]);
       nMax = Integer.parseInt(args[2]);
       selfId = host + ":" + port;
-      Server.startServer(port);
+      MessageRouter router = Main::route;
+      Server.startServer(port, router);
       controller.announceNode(selfId);
       int nodesCount = controller.getNodesCount();
       if (nodesCount < 2) {
@@ -156,7 +169,6 @@ class Main {
       selfIndex = nodes.indexOf(selfId);
       buildBinomialGraphNetwork();
       calculateRoutes();
-      Server.setRoutes(routes);
       controller.incReadyCount();
       while (controller.getReadyCount() < nodesCount) {
         Thread.sleep(1000);

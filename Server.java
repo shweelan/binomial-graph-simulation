@@ -9,16 +9,16 @@ import java.io.IOException;
 import java.io.EOFException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import bn.Route;
+import bn.MessageRouter;
 
 class InConnectionWorker implements Runnable {
   private Socket socket;
   private String id;
-  private HashMap<Integer, Route> routes;
+  private MessageRouter router;
 
-  public InConnectionWorker(Socket socket, HashMap<Integer, Route> routes) {
+  public InConnectionWorker(Socket socket, MessageRouter router) {
     this.socket = socket;
-    this.routes = routes;
+    this.router = router;
     this.id = this.socket.getInetAddress() + ":" + String.valueOf(this.socket.getPort());
     System.out.println("Connection `" + this.id + "` connected!");
   }
@@ -34,6 +34,9 @@ class InConnectionWorker implements Runnable {
           System.out.println("INCOMING MESSAGE: " + message);
           if (message.isGoodBye()) {
             break;
+          }
+          else {
+            router.route(message);
           }
         }
       }
@@ -59,21 +62,22 @@ class InConnectionWorker implements Runnable {
 
 class ServerWorker implements Runnable {
   private ServerSocket server = null;
-  HashMap<Integer, Route> routes = null;
+  private MessageRouter router = null;
   private ArrayList<InConnectionWorker> workers;
 
-  public ServerWorker(int port) throws Exception {
+  public ServerWorker(int port, MessageRouter router) throws Exception {
     System.out.println("Trying to start server on port " + port);
     server = new ServerSocket(port);
     System.out.println("Server listening on port " + server.getLocalPort());
     workers = new ArrayList<InConnectionWorker>();
+    this.router = router;
   }
 
   public void run() {
     try {
       while (true) {
         Socket socket = server.accept();
-        InConnectionWorker worker = new InConnectionWorker(socket, routes);
+        InConnectionWorker worker = new InConnectionWorker(socket, router);
         Thread thread = new Thread(worker);
         thread.start();
         workers.add(worker);
@@ -85,10 +89,6 @@ class ServerWorker implements Runnable {
         e.printStackTrace();
       }
     }
-  }
-
-  public void setRoutes(HashMap<Integer, Route> routes) {
-    this.routes = routes;
   }
 
   public void stop() throws Exception {
@@ -105,17 +105,13 @@ class ServerWorker implements Runnable {
 public class Server {
   private static ServerWorker worker;
 
-  public static void startServer(int port) throws Exception {
-    worker = new ServerWorker(port);
+  public static void startServer(int port, MessageRouter router) throws Exception {
+    worker = new ServerWorker(port, router);
     Thread thread = new Thread(worker);
     thread.start();
   }
 
   public static void stopServer() throws Exception {
     if (worker != null) worker.stop();
-  }
-
-  public static void setRoutes(HashMap<Integer, Route> routes) {
-    worker.setRoutes(routes);
   }
 }
