@@ -43,7 +43,6 @@ javac -Xdiags:verbose -Xlint:unchecked -g -d build/ *.java
 mkdir -p "$logs_dir"
 
 while [[ true ]]; do
-  redis_api "DEL" $ready_nodes_key
   while [[ true ]]; do
     ready_str="READY_$ip"
     redis_api "SETEX" $ready_str 2 $placeholder
@@ -70,11 +69,12 @@ while [[ true ]]; do
   n_max="3"
 
   ts="$(date +"%s")"
+  mkdir "$logs_dir/$ts"
   for (( i = 0; i < $num_nodes_per_machine; i++ )); do
     this_port="$(($starting_port + $i))"
     echo "I will start server $ip $this_port $n_max $ts"
-    out="$logs_dir/$ts-$this_port-log.log"
-    err="$logs_dir/$ts-$this_port-err.log"
+    out="$logs_dir/$ts/$this_port-log.log"
+    err="$logs_dir/$ts/$this_port-err.log"
     java -classpath "$build_dir" bn.Main $ip $this_port $n_max 2> "$err" 1> "$out" &
   done
 
