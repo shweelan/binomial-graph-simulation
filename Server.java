@@ -31,6 +31,7 @@ class InConnectionWorker implements Runnable {
           Message message = new Message(inputStream);
           // TODO statistics, routing
           // TODO USE TS for latencies
+          message.incNumHops();
           System.out.println("INCOMING MESSAGE: " + message);
           if (message.isGoodBye()) {
             break;

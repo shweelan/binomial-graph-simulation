@@ -27,7 +27,6 @@ class OutConnectionWorker implements Runnable {
           if (message.getNumHops() == 0) {
             message.setTimestamp(controller.getTimestamp());
           }
-          message.incNumHops();
           System.out.println("OUTGOING MESSAGE: " + message);
           outputStream.write(message.serialize());
           outputStream.flush();
