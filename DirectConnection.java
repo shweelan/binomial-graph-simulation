@@ -9,11 +9,12 @@ import bn.Message;
 import bn.Controller;
 
 class OutConnectionWorker implements Runnable {
-  private static Controller controller = Controller.init();
+  private static Controller controller;
   private Socket socket;
   private LinkedBlockingDeque<Message> queue;
 
   public OutConnectionWorker(Socket socket, LinkedBlockingDeque<Message> queue) throws Exception {
+    controller = Controller.getInstance();
     this.socket = socket;
     this.queue = queue;
   }

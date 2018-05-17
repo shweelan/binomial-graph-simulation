@@ -4,5 +4,5 @@ import bn.Message;
 
 @FunctionalInterface
 public interface MessageRouter {
-    void route(Message message);
+  void route(Message message);
 }

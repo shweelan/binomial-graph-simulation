@@ -8,17 +8,34 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class Controller {
-  private static Controller self;
+  private static Controller self = null;
   private static final String REDIS_URL = "http://127.0.0.1:7379";
   private static final String SEPARATOR = "-_-";
   private static final String LISTENERS_ID = "LISTENERS";
   private static final String NODES_COUNT_ID = "NUM_TOTAL_NODES";
   private static final String READY_COUNT_ID = "NUM_READY_NODES";
+  private static final String RESULTS_ID = "RESULTS";
   private static Long timestampDiff = null;
 
-  public static Controller init() {
+  private static synchronized void init() {
     if (self == null) {
       self = new Controller();
+    }
+  }
+
+  public static Controller getInstance() throws Exception {
+    init();
+    if (timestampDiff == null) {
+      // synchronize timestamp with redis
+      String[] command = {
+        "TIME"
+      };
+      long ts = System.currentTimeMillis();
+      String[] time = self.redisAPI(command).split(SEPARATOR);
+      long rtt = System.currentTimeMillis() - ts;
+      ts += rtt / 2;
+      long remoteTs = (new Long(time[0]) * 1000 + new Long(time[1]) / 1000);
+      timestampDiff = remoteTs - ts;
     }
     return self;
   }
@@ -126,18 +143,17 @@ public class Controller {
     return Integer.parseInt(readyCountStr);
   }
 
-  public long getTimestamp() throws Exception {
-    long ts = System.currentTimeMillis();
-    if (timestampDiff == null) {
-      String[] command = {
-        "TIME"
-      };
-      String[] time = redisAPI(command).split(SEPARATOR);
-      long rtt = System.currentTimeMillis() - ts;
-      ts += rtt / 2;
-      long remoteTs = (new Long(time[0]) * 1000 + new Long(time[1]) / 1000);
-      timestampDiff = remoteTs - ts;
-    }
-    return ts + timestampDiff;
+  public void recordResults(String id, String result) throws Exception {
+    String[] command = {
+      "HSET",
+      RESULTS_ID,
+      id,
+      result
+    };
+    redisAPI(command);
+  }
+
+  public long getTimestamp() {
+    return System.currentTimeMillis() + timestampDiff;
   }
 }

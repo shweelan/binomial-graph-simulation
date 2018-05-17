@@ -3,10 +3,13 @@ package bn;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.io.ByteArrayInputStream;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import bn.Controller;
 import bn.Server;
 import bn.DirectConnection;
@@ -14,7 +17,7 @@ import bn.Message;
 import bn.MessageRouter;
 
 class Main {
-  private static Controller controller = Controller.init();
+  private static Controller controller;
   private static String host;
   private static int port;
   private static String selfId;
@@ -24,6 +27,11 @@ class Main {
   private static HashMap<Integer, HashSet<Integer>> binomialGraph;
   private static HashMap<Integer, Route> routes;
   private static HashMap<Integer, DirectConnection> connections;
+
+  private static AtomicLong messagesSent;
+  private static AtomicLong messagesReceived;
+  private static AtomicLong messagesForwarded;
+  private static ConcurrentLinkedQueue<Long> latencies;
 
   private static void buildBinomialGraphNetwork() throws Exception {
     if (nodes.size() < 2) {
@@ -107,19 +115,27 @@ class Main {
     }
   }
 
+  private static void reportReceivedMessage(Message message) {
+    messagesReceived.incrementAndGet();
+    latencies.add(controller.getTimestamp() - message.getTimestamp());
+  }
+
   private static boolean sendMessage(Message message) {
     final int destination = message.getDestination();
     final int nextHop = routes.get(destination).getRandomViaNode();
     DirectConnection connection = connections.get(nextHop);
     // TODO throw Exception if connection == null
     // try non-blocking then blocking send
-    return connection.sendMessage(message) || connection.sendBlockingMessage(message);
+    boolean sent = connection.sendMessage(message) || connection.sendBlockingMessage(message);
+    if (sent && !message.isGoodBye()) messagesSent.incrementAndGet();
+    return sent;
   }
 
   private static void route(Message message) {
-    // reportIncomming(message);
+    reportReceivedMessage(message);
     if (message.getDestination() != selfIndex) {
       while (!sendMessage(message));
+      messagesForwarded.incrementAndGet();
       System.out.println("FORWARD MESSAGE:" + message);
     }
   }
@@ -152,12 +168,66 @@ class Main {
     System.out.println("Simulation Ended");
   }
 
+  private static void recordResults(long simulationTime) throws Exception {
+    String results = "";
+    try {
+      if (simulationTime <= 0) throw new Exception();
+      ArrayList<String> csv = new ArrayList<String>();
+      Long[] latenciesArray = new Long[latencies.size()];
+      latenciesArray = latencies.toArray(latenciesArray);
+      Arrays.sort(latenciesArray);
+      long sum = 0;
+      for(Long latency : latenciesArray) {
+        sum += latency;
+      }
+      float averageLatency = sum / (float) latenciesArray.length;
+      long minLatency = latenciesArray[0];
+      long maxLatency = latenciesArray[latenciesArray.length - 1];
+      int mid = latenciesArray.length / 2;
+      long medianLatency = latenciesArray[mid];
+      if (latenciesArray.length % 2 == 0) {
+        medianLatency += latenciesArray[mid - 1];
+        medianLatency /= 2;
+      }
+      long percentile1Latency = latenciesArray[latenciesArray.length / 100];
+      long percentile25Latency = latenciesArray[latenciesArray.length / 4];
+      long percentile75Latency = latenciesArray[latenciesArray.length * 3 / 4];
+      long percentile99Latency = latenciesArray[latenciesArray.length * 99 / 100];
+      csv.add(String.valueOf(selfIndex));
+      csv.add(selfId);
+      csv.add(String.valueOf(simulationTime));
+      csv.add(messagesSent.toString());
+      csv.add(messagesReceived.toString());
+      csv.add(messagesForwarded.toString());
+      csv.add(String.valueOf(averageLatency));
+      csv.add(String.valueOf(minLatency));
+      csv.add(String.valueOf(percentile1Latency));
+      csv.add(String.valueOf(percentile25Latency));
+      csv.add(String.valueOf(medianLatency));
+      csv.add(String.valueOf(percentile75Latency));
+      csv.add(String.valueOf(percentile99Latency));
+      csv.add(String.valueOf(maxLatency));
+      results = String.join(",", csv);
+    } catch(Exception e) {
+      results = "ERROR! Something went wrong";
+    }
+    System.out.println("RESULTS: " + results);
+    controller.recordResults(selfId, results);
+  }
+
   public static void main(String args[]) throws Exception {
+    long simulationTime = -1;
     try {
       host = args[0];
       port = Integer.parseInt(args[1]);
       nMax = Integer.parseInt(args[2]);
       selfId = host + ":" + port;
+      // TODO redis url via args
+      controller = Controller.getInstance();
+      messagesSent = new AtomicLong();
+      messagesReceived = new AtomicLong();
+      messagesForwarded = new AtomicLong();
+      latencies = new ConcurrentLinkedQueue<Long>();
       MessageRouter router = Main::route;
       Server.startServer(port, router);
       controller.announceNode(selfId);
@@ -177,7 +247,9 @@ class Main {
       while (controller.getReadyCount() < nodesCount) {
         Thread.sleep(1000);
       }
+      long ts = System.currentTimeMillis();
       startSimulation();
+      simulationTime = System.currentTimeMillis() - ts;
       controller.delAnnouncedNode(selfId);
       while (controller.getAnnouncedNodesCount() > 0) {
         Thread.sleep(1000);
@@ -188,6 +260,7 @@ class Main {
     }
     finally {
       Server.stopServer();
+      recordResults(simulationTime);
     }
   }
 }
