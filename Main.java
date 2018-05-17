@@ -18,11 +18,15 @@ import bn.MessageRouter;
 
 class Main {
   private static Controller controller;
+  private static String testId = "default";
   private static String host;
   private static int port;
   private static String selfId;
   private static int selfIndex;
-  private static int nMax;
+  private static int nMax = 3;
+  private static int numMessages = 1000;
+  private static int messageSize = 1024;
+  private static boolean useDirectConnections = false;
   private static ArrayList<String> nodes;
   private static HashMap<Integer, HashSet<Integer>> binomialGraph;
   private static HashMap<Integer, Route> routes;
@@ -147,19 +151,16 @@ class Main {
     System.out.println(nodes);
     System.out.println(routes);
 
-    // TODO read the config (message size, num messages | duration, ..) from redis
-    int messageSize = 1024;
-    long numMessages = 200;
-
     Random random = new Random();
-    long messagesSent = 0;
+    int messagesCount = 0;
 
-    while (messagesSent < numMessages) {
+    while (messagesCount < numMessages) {
       int destination = random.nextInt(nodes.size());
       if (destination == selfIndex) continue;
       long ts = controller.getTimestamp();
       Message message = new Message(selfIndex, destination, ts, messageSize);
-      if (sendMessage(message)) messagesSent++;
+      if (sendMessage(message)) messagesCount++;
+      if (messagesCount % 100 == 0) Thread.sleep(100);
     }
 
     for (DirectConnection connection : connections.values()) {
@@ -212,7 +213,7 @@ class Main {
       results = selfIndex + "," + selfId + ",ERROR! Something went wrong";
     }
     System.out.println("RESULTS: " + results);
-    controller.recordResults(selfId, results);
+    controller.recordResults(testId, selfId, results);
   }
 
   public static void main(String args[]) throws Exception {
@@ -220,14 +221,19 @@ class Main {
     try {
       host = args[0];
       port = Integer.parseInt(args[1]);
-      nMax = Integer.parseInt(args[2]);
       selfId = host + ":" + port;
-      // TODO redis url via args
-      controller = Controller.getInstance();
       messagesSent = new AtomicLong();
       messagesReceived = new AtomicLong();
       messagesForwarded = new AtomicLong();
       latencies = new ConcurrentLinkedQueue<Long>();
+      // TODO redis url via args
+      controller = Controller.getInstance();
+      testId = controller.getTestId();
+      String[] config = controller.getConfig();
+      if (config.length > 0) nMax = Integer.parseInt(config[0]);
+      if (config.length > 1) numMessages = Integer.parseInt(config[1]);
+      if (config.length > 2) messageSize = Integer.parseInt(config[2]);
+      if (config.length > 3) useDirectConnections = Boolean.parseBoolean(config[3]);
       MessageRouter router = Main::route;
       Server.startServer(port, router);
       controller.announceNode(selfId);

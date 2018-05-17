@@ -11,10 +11,12 @@ public class Controller {
   private static Controller self = null;
   private static final String REDIS_URL = "http://127.0.0.1:7379";
   private static final String SEPARATOR = "-_-";
-  private static final String LISTENERS_ID = "LISTENERS";
-  private static final String NODES_COUNT_ID = "NUM_TOTAL_NODES";
-  private static final String READY_COUNT_ID = "NUM_READY_NODES";
-  private static final String RESULTS_ID = "RESULTS";
+  private static final String LISTENERS_KEY = "LISTENERS";
+  private static final String NODES_COUNT_KEY = "NUM_TOTAL_NODES";
+  private static final String READY_COUNT_KEY = "NUM_READY_NODES";
+  private static final String CONFIG_KEY = "CONFIG";
+  private static final String RESULTS_KEY = "RESULTS";
+  private static final String TEST_ID_KEY = "TEST_NAME";
   private static Long timestampDiff = null;
 
   private static synchronized void init() {
@@ -72,7 +74,7 @@ public class Controller {
   public void announceNode(String id) throws Exception {
     String[] command = {
       "RPUSH",
-      LISTENERS_ID,
+      LISTENERS_KEY,
       id
     };
     redisAPI(command);
@@ -81,7 +83,7 @@ public class Controller {
   public int getNodesCount() throws Exception {
     String[] command = {
       "GET",
-      NODES_COUNT_ID
+      NODES_COUNT_KEY
     };
     String nodesCountStr = redisAPI(command);
     if (nodesCountStr.equals("")) {
@@ -93,7 +95,7 @@ public class Controller {
   public int getAnnouncedNodesCount() throws Exception {
     String[] command = {
       "LLEN",
-      LISTENERS_ID
+      LISTENERS_KEY
     };
     String nodesCountStr = redisAPI(command);
     if (nodesCountStr.equals("")) {
@@ -105,7 +107,7 @@ public class Controller {
   public ArrayList<String> getAnnouncedNodes() throws Exception {
     String[] command = {
       "LRANGE",
-      LISTENERS_ID,
+      LISTENERS_KEY,
       "0",
       "-1"
     };
@@ -116,7 +118,7 @@ public class Controller {
   public void delAnnouncedNode(String id) throws Exception {
     String[] command = {
       "LREM",
-      LISTENERS_ID,
+      LISTENERS_KEY,
       "0",
       id
     };
@@ -126,7 +128,7 @@ public class Controller {
   public void incReadyCount() throws Exception {
     String[] command = {
       "INCR",
-      READY_COUNT_ID
+      READY_COUNT_KEY
     };
     redisAPI(command);
   }
@@ -134,7 +136,7 @@ public class Controller {
   public int getReadyCount() throws Exception {
     String[] command = {
       "GET",
-      READY_COUNT_ID
+      READY_COUNT_KEY
     };
     String readyCountStr = redisAPI(command);
     if (readyCountStr.equals("")) {
@@ -143,14 +145,36 @@ public class Controller {
     return Integer.parseInt(readyCountStr);
   }
 
-  public void recordResults(String id, String result) throws Exception {
+  public void recordResults(String testId, String key, String result) throws Exception {
     String[] command = {
       "HSET",
-      RESULTS_ID,
-      id,
+      RESULTS_KEY + "_" + testId,
+      key,
       result
     };
     redisAPI(command);
+  }
+
+  public String[] getConfig() throws Exception {
+    String[] command = {
+      "LRANGE",
+      CONFIG_KEY,
+      "0",
+      "-1"
+    };
+    String configStr = redisAPI(command);
+    if (configStr.equals("")) {
+      return new String[0];
+    }
+    return configStr.split(SEPARATOR);
+  }
+
+  public String getTestId() throws Exception {
+    String[] command = {
+      "GET",
+      TEST_ID_KEY
+    };
+    return redisAPI(command);
   }
 
   public long getTimestamp() {

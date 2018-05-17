@@ -10,11 +10,13 @@ num_nodes_per_machine="10"
 starting_port="2912"
 total_nodes_key="NUM_TOTAL_NODES"
 ready_nodes_key="NUM_READY_NODES"
+test_id_key="TEST_NAME"
 separator="-_-"
 working_dir="/Users/shweelan"
 clone_dir_name="simulation"
 build_dir="build"
 logs_dir="logs"
+test_id="default"
 clone_url="https://github.com/shweelan/binomial-graph-simulation.git"
 
 redis_api_ret=""
@@ -48,8 +50,6 @@ while [[ true ]]; do
     redis_api "SETEX" $ready_str 2 $placeholder
     redis_api "EXISTS" $bootstrap_key
     if [[ "$redis_api_ret" == "1" ]]; then
-      redis_api "GET" $bootstrap_key
-      n_max="$redis_api_ret"
       break
     fi
     sleep 1
@@ -65,17 +65,17 @@ while [[ true ]]; do
     sleep 1
   done
 
-  # TODO remove
-  n_max="3"
-
   ts="$(date +"%s")"
-  mkdir "$logs_dir/$ts"
+  redis_api "SETNX" $test_id_key $ts
+  redis_api "GET" $test_id_key
+  test_id="$redis_api_ret"
+  mkdir -p "$logs_dir/$test_id"
   for (( i = 0; i < $num_nodes_per_machine; i++ )); do
     this_port="$(($starting_port + $i))"
-    echo "I will start server $ip $this_port $n_max $ts"
-    out="$logs_dir/$ts/$this_port-log.log"
-    err="$logs_dir/$ts/$this_port-err.log"
-    java -classpath "$build_dir" bn.Main $ip $this_port $n_max 2> "$err" 1> "$out" &
+    echo "I will start server $test_id $ip $this_port"
+    out="$logs_dir/$test_id/$this_port-log.log"
+    err="$logs_dir/$test_id/$this_port-err.log"
+    java -classpath "$build_dir" bn.Main $ip $this_port 2> "$err" 1> "$out" &
   done
 
   for job_pid in `jobs -p`; do
