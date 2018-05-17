@@ -5,7 +5,13 @@ placeholder="1"
 bootstrap_key="BOOT"
 redis_url="http://127.0.0.1:7379"
 # TODO change it for linux hostname -I
-ip="$(ifconfig en1 inet | tail -1 | cut -d ' ' -f 2)"
+if [[ $OSTYPE == "darwin"* ]] ; then
+  ip="$(ifconfig en1 inet | tail -1 | cut -d ' ' -f 2)"
+elif [[ "$OSTYPE" == "linux-gnu" ]]; then
+  ip="$(hostname -I)"
+else
+  exit -1
+fi
 num_nodes_per_machine="10"
 starting_port="2912"
 total_nodes_key="NUM_TOTAL_NODES"
@@ -30,8 +36,6 @@ redis_api() {
   redis_api_ret=$(curl -s "$command")
   echo "$redis_api_ret"
 }
-
-# TODO install git and java
 
 cd "$working_dir"
 if [ ! -d "$clone_dir_name" ] ; then
