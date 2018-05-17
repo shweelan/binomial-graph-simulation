@@ -209,7 +209,7 @@ class Main {
       csv.add(String.valueOf(maxLatency));
       results = String.join(",", csv);
     } catch(Exception e) {
-      results = "ERROR! Something went wrong";
+      results = selfIndex + "," + selfId + ",ERROR! Something went wrong";
     }
     System.out.println("RESULTS: " + results);
     controller.recordResults(selfId, results);
