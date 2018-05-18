@@ -8,7 +8,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.io.ByteArrayInputStream;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import bn.Controller;
 import bn.Server;
@@ -33,9 +33,9 @@ class Main {
   private static HashMap<Integer, Route> routes;
   private static HashMap<Integer, DirectConnection> connections;
 
-  private static AtomicLong messagesSent;
-  private static AtomicLong messagesReceived;
-  private static AtomicLong messagesForwarded;
+  private static LongAdder messagesSent;
+  private static LongAdder messagesReceived;
+  private static LongAdder messagesForwarded;
   private static ConcurrentLinkedQueue<Long> latencies;
 
   private static void buildBinomialGraphNetwork() throws Exception {
@@ -122,28 +122,30 @@ class Main {
 
   private static boolean sendMessage(Message message) {
     final int destination = message.getDestination();
-    final int nextHop = routes.get(destination).getRandomViaNode();
+    Route route = routes.get(destination);
+    final int nextHop = route.getRandomViaNode();
     DirectConnection connection = connections.get(nextHop);
     // TODO throw Exception if connection == null
     // try non-blocking then blocking send
     boolean sent = connection.sendMessage(message) || connection.sendBlockingMessage(message);
+    if (sent) {
+      route.used();
+      messagesSent.increment();
+    }
     return sent;
   }
 
-  private static void updateStats(long received, long forwarded, ArrayList<Long> lats) {
-    messagesReceived.addAndGet(received);
-    messagesForwarded.addAndGet(forwarded);
-    messagesSent.addAndGet(forwarded);
+  private static void updateStats(ArrayList<Long> lats) {
     latencies.addAll(lats);
   }
 
-  private static boolean route(Message message) {
+  private static void route(Message message) {
+    messagesReceived.increment();
     if (message.getDestination() != selfIndex) {
       while (!sendMessage(message));
+      messagesForwarded.increment();
       System.out.println("FORWARD MESSAGE:" + message);
-      return true;
     }
-    return false;
   }
 
   private static void startSimulation() throws Exception {
@@ -164,10 +166,8 @@ class Main {
       if (sendMessage(message)) {
         messagesCount++;
         if (messagesCount % 101 == 0) Thread.sleep(100);
-        if (messagesCount % 1000 == 0) messagesSent.addAndGet(1000);
       }
     }
-    messagesSent.addAndGet(messagesCount % 1000);
 
     for (DirectConnection connection : connections.values()) {
       connection.close();
@@ -229,9 +229,9 @@ class Main {
       host = args[0];
       port = Integer.parseInt(args[1]);
       selfId = host + ":" + port;
-      messagesSent = new AtomicLong();
-      messagesReceived = new AtomicLong();
-      messagesForwarded = new AtomicLong();
+      messagesSent = new LongAdder();
+      messagesReceived = new LongAdder();
+      messagesForwarded = new LongAdder();
       latencies = new ConcurrentLinkedQueue<Long>();
       // TODO redis url via args
       controller = Controller.getInstance();

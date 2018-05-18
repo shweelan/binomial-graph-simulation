@@ -2,12 +2,14 @@ package bn;
 
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.concurrent.atomic.LongAdder;
 
 public class Route {
   private static Random random = new Random();
   private int source;
   private int destination;
   private int routeLength;
+  private LongAdder usage;
   private ArrayList<Integer> viaNodes = new ArrayList<Integer>();
 
   public Route(int src, int dest, int length, int viaNode) {
@@ -15,7 +17,20 @@ public class Route {
     source = src;
     destination = dest;
     routeLength = length;
+    usage = new LongAdder();
     viaNodes.add(viaNode);
+  }
+
+  public void used() {
+    usage.increment();
+  }
+
+  public long getUsage() {
+    return usage.longValue();
+  }
+
+  public long getUsageAndReset() {
+    return usage.sumThenReset();
   }
 
   public int getRouteLength() {
