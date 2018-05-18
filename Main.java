@@ -130,10 +130,10 @@ class Main {
     return sent;
   }
 
-  private static void updateStats(long received, long forwaded, ArrayList<Long> lats) {
+  private static void updateStats(long received, long forwarded, ArrayList<Long> lats) {
     messagesReceived.addAndGet(received);
-    messagesForwarded.addAndGet(forwaded);
-    messagesSent.addAndGet(forwaded);
+    messagesForwarded.addAndGet(forwarded);
+    messagesSent.addAndGet(forwarded);
     latencies.addAll(lats);
   }
 

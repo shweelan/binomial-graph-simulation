@@ -18,7 +18,7 @@ class InConnectionWorker implements Runnable {
   private MessageRouter router;
   private StatsUpdater updater;
   private long received;
-  private long forwaded;
+  private long forwarded;
   private ArrayList<Long> latencies;
   private Controller controller;
 
@@ -28,7 +28,7 @@ class InConnectionWorker implements Runnable {
     this.router = router;
     this.updater = updater;
     this.received = 0;
-    this.forwaded = 0;
+    this.forwarded = 0;
     this.latencies = new ArrayList<Long>();
     this.id = this.socket.getInetAddress() + ":" + String.valueOf(this.socket.getPort());
     System.out.println("Connection `" + this.id + "` connected!");
@@ -50,12 +50,12 @@ class InConnectionWorker implements Runnable {
             latencies.add(controller.getTimestamp() - message.getTimestamp());
             boolean routed = router.route(message);
             if (routed) {
-              forwaded++;
+              forwarded++;
             }
             if (received >= 1000) {
-              updater.updateStats(received, forwaded, latencies);
+              updater.updateStats(received, forwarded, latencies);
               received = 0;
-              forwaded = 0;
+              forwarded = 0;
               latencies.clear();
             }
           }
@@ -67,7 +67,7 @@ class InConnectionWorker implements Runnable {
         }
       }
       finally {
-        updater.updateStats(received, forwaded, latencies);
+        updater.updateStats(received, forwarded, latencies);
         inputStream.close();
         this.socket.close();
         System.out.println("Connection `" + this.id + "` disconnected!");
