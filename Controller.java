@@ -5,6 +5,7 @@ import java.net.URL;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Arrays;
 
 public class Controller {
@@ -155,18 +156,21 @@ public class Controller {
     redisAPI(command);
   }
 
-  public String[] getConfig() throws Exception {
+  public HashMap<String, String> getConfig() throws Exception {
     String[] command = {
-      "LRANGE",
-      CONFIG_KEY,
-      "0",
-      "-1"
+      "HGETALL",
+      CONFIG_KEY
     };
-    String configStr = redisAPI(command);
-    if (configStr.equals("")) {
-      return new String[0];
+    HashMap<String, String> config = new HashMap<String, String>();
+    String[] elems = redisAPI(command).split(SEPARATOR);
+    int i = 0;
+    while (i < elems.length) {
+      String key = elems[i];
+      String value = elems[i + 1];
+      config.put(key, value);
+      i += 2;
     }
-    return configStr.split(SEPARATOR);
+    return config;
   }
 
   public String getTestId() throws Exception {

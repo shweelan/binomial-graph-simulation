@@ -15,6 +15,7 @@ import bn.Server;
 import bn.DirectConnection;
 import bn.Message;
 import bn.MessageRouter;
+import bn.StatsUpdater;
 
 class Main {
   private static Controller controller;
@@ -119,11 +120,6 @@ class Main {
     }
   }
 
-  private static void reportReceivedMessage(Message message) {
-    messagesReceived.incrementAndGet();
-    latencies.add(controller.getTimestamp() - message.getTimestamp());
-  }
-
   private static boolean sendMessage(Message message) {
     final int destination = message.getDestination();
     final int nextHop = routes.get(destination).getRandomViaNode();
@@ -131,17 +127,23 @@ class Main {
     // TODO throw Exception if connection == null
     // try non-blocking then blocking send
     boolean sent = connection.sendMessage(message) || connection.sendBlockingMessage(message);
-    if (sent && !message.isGoodBye()) messagesSent.incrementAndGet();
     return sent;
   }
 
-  private static void route(Message message) {
-    reportReceivedMessage(message);
+  private static void updateStats(long received, long forwaded, ArrayList<Long> lats) {
+    messagesReceived.addAndGet(received);
+    messagesForwarded.addAndGet(forwaded);
+    messagesSent.addAndGet(forwaded);
+    latencies.addAll(lats);
+  }
+
+  private static boolean route(Message message) {
     if (message.getDestination() != selfIndex) {
       while (!sendMessage(message));
-      messagesForwarded.incrementAndGet();
       System.out.println("FORWARD MESSAGE:" + message);
+      return true;
     }
+    return false;
   }
 
   private static void startSimulation() throws Exception {
@@ -159,9 +161,13 @@ class Main {
       if (destination == selfIndex) continue;
       long ts = controller.getTimestamp();
       Message message = new Message(selfIndex, destination, ts, messageSize);
-      if (sendMessage(message)) messagesCount++;
-      if (messagesCount % 100 == 0) Thread.sleep(100);
+      if (sendMessage(message)) {
+        messagesCount++;
+        if (messagesCount % 101 == 0) Thread.sleep(100);
+        if (messagesCount % 1000 == 0) messagesSent.addAndGet(1000);
+      }
     }
+    messagesSent.addAndGet(messagesCount % 1000);
 
     for (DirectConnection connection : connections.values()) {
       connection.close();
@@ -210,7 +216,8 @@ class Main {
       csv.add(String.valueOf(maxLatency));
       results = String.join(",", csv);
     } catch(Exception e) {
-      results = selfIndex + "," + selfId + ",ERROR! Something went wrong";
+      e.printStackTrace();
+      results = selfIndex + "," + selfId + "," + simulationTime + ",ERROR";
     }
     System.out.println("RESULTS: " + results);
     controller.recordResults(testId, selfId, results);
@@ -229,13 +236,14 @@ class Main {
       // TODO redis url via args
       controller = Controller.getInstance();
       testId = controller.getTestId();
-      String[] config = controller.getConfig();
-      if (config.length > 0) nMax = Integer.parseInt(config[0]);
-      if (config.length > 1) numMessages = Integer.parseInt(config[1]);
-      if (config.length > 2) messageSize = Integer.parseInt(config[2]);
-      if (config.length > 3) useDirectConnections = Boolean.parseBoolean(config[3]);
+      HashMap<String, String> config = controller.getConfig();
+      if (config.containsKey("nmax")) nMax = Integer.parseInt(config.get("nmax"));
+      if (config.containsKey("msgcount")) numMessages = Integer.parseInt(config.get("msgcount"));
+      if (config.containsKey("msgsize")) messageSize = Integer.parseInt(config.get("msgsize"));
+      if (config.containsKey("usedirect")) useDirectConnections = Boolean.parseBoolean(config.get("usedirect"));
       MessageRouter router = Main::route;
-      Server.startServer(port, router);
+      StatsUpdater updater = Main::updateStats;
+      Server.startServer(port, router, updater);
       controller.announceNode(selfId);
       int nodesCount = controller.getNodesCount();
       if (nodesCount < 2) {
