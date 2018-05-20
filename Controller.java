@@ -10,7 +10,7 @@ import java.util.Arrays;
 
 public class Controller {
   private static Controller self = null;
-  private static final String REDIS_URL = "http://127.0.0.1:7379";
+  private static String REDIS_URL = "http://127.0.0.1:7379";
   private static final String SEPARATOR = "-_-";
   private static final String LISTENERS_KEY = "LISTENERS";
   private static final String NODES_COUNT_KEY = "NUM_TOTAL_NODES";
@@ -35,12 +35,17 @@ public class Controller {
       };
       long ts = System.currentTimeMillis();
       String[] time = self.redisAPI(command).split(SEPARATOR);
-      long rtt = System.currentTimeMillis() - ts;
-      ts += rtt / 2;
+      ts = System.currentTimeMillis();
       long remoteTs = (new Long(time[0]) * 1000 + new Long(time[1]) / 1000);
       timestampDiff = remoteTs - ts;
+      System.out.println("REDIS TIME: " + remoteTs);
+      System.out.println("REDIS TIME DIFF: " + timestampDiff);
     }
     return self;
+  }
+
+  public static void setUrl(String url) {
+    REDIS_URL = url;
   }
 
   private String redisAPI(String[] command) throws Exception {
@@ -162,13 +167,16 @@ public class Controller {
       CONFIG_KEY
     };
     HashMap<String, String> config = new HashMap<String, String>();
-    String[] elems = redisAPI(command).split(SEPARATOR);
-    int i = 0;
-    while (i < elems.length) {
-      String key = elems[i];
-      String value = elems[i + 1];
-      config.put(key, value);
-      i += 2;
+    String response = redisAPI(command);
+    if (!response.equals("")) {
+      String[] elems = response.split(SEPARATOR);
+      int i = 0;
+      while (i < elems.length) {
+        String key = elems[i];
+        String value = elems[i + 1];
+        config.put(key, value);
+        i += 2;
+      }
     }
     return config;
   }
@@ -183,5 +191,9 @@ public class Controller {
 
   public long getTimestamp() {
     return System.currentTimeMillis() + timestampDiff;
+  }
+
+  public long getTimeDiff() {
+    return timestampDiff;
   }
 }

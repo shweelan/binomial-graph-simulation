@@ -214,6 +214,7 @@ class Main {
       csv.add(String.valueOf(percentile75Latency));
       csv.add(String.valueOf(percentile99Latency));
       csv.add(String.valueOf(maxLatency));
+      csv.add(String.valueOf(controller.getTimeDiff()));
       results = String.join(",", csv);
     } catch(Exception e) {
       e.printStackTrace();
@@ -233,7 +234,7 @@ class Main {
       messagesReceived = new LongAdder();
       messagesForwarded = new LongAdder();
       latencies = new ConcurrentLinkedQueue<Long>();
-      // TODO redis url via args
+      if (args.length > 2) Controller.setUrl(args[2]);
       controller = Controller.getInstance();
       testId = controller.getTestId();
       HashMap<String, String> config = controller.getConfig();

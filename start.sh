@@ -4,7 +4,6 @@ set -e
 placeholder="1"
 bootstrap_key="BOOT"
 redis_url="http://127.0.0.1:7379"
-# TODO change it for linux hostname -I
 if [[ $OSTYPE == "darwin"* ]] ; then
   ip="$(ifconfig en1 inet | tail -1 | cut -d ' ' -f 2)"
 elif [[ "$OSTYPE" == "linux-gnu" ]]; then
@@ -76,10 +75,10 @@ while [[ true ]]; do
   mkdir -p "$logs_dir/$test_id"
   for (( i = 0; i < $num_nodes_per_machine; i++ )); do
     this_port="$(($starting_port + $i))"
-    echo "I will start server $test_id $ip $this_port"
+    echo "I will start server $test_id $ip $this_port $redis_url"
     out="$logs_dir/$test_id/$this_port-log.log"
     err="$logs_dir/$test_id/$this_port-err.log"
-    java -classpath "$build_dir" bn.Main $ip $this_port 2> "$err" 1> "$out" &
+    java -classpath "$build_dir" bn.Main $ip $this_port $redis_url 2> "$err" 1> "$out" &
   done
 
   for job_pid in `jobs -p`; do
