@@ -82,26 +82,21 @@ class Main {
         HashSet<Integer> children = binomialGraph.get(parent);
         ArrayList<Integer> parentPath = paths.get(parent);
         for (Integer child : children) {
-          // TODO move inside if statement
-          ArrayList<Integer> path = new ArrayList<Integer>();
-          for (Integer node : parentPath) {
-            path.add(node);
-          }
-          path.add(child);
-          System.out.println(selfIndex + " " + child + " " + path);
           if (!routes.containsKey(child)) {
+            ArrayList<Integer> path = new ArrayList<Integer>();
+            path.addAll(parentPath);
+            path.add(child);
             paths.put(child, path);
             routes.put(child, new Route(selfIndex, child, path.size(), path.get(0)));
           }
           else {
             // Already found route, try to add new possible route
             Route route = routes.get(child);
+            // Same length path
             if (route.getRouteLength() == parentPath.size() + 1) {
-              // Same length path
               route.addViaNode(parentPath.get(0));
             }
           }
-          System.out.println(routes.get(child));
           queue.add(child);
         }
         visited.add(parent);
@@ -150,10 +145,6 @@ class Main {
 
   private static void startSimulation() throws Exception {
     System.out.println("Simulation Started");
-    System.out.println(selfIndex);
-    System.out.println(binomialGraph);
-    System.out.println(nodes);
-    System.out.println(routes);
 
     Random random = new Random();
     int messagesCount = 0;
