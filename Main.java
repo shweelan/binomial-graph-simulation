@@ -175,11 +175,11 @@ class Main {
     System.out.println("Simulation Ended");
   }
 
-  private static void recordResults(long simulationTime) throws Exception {
+  private static void recordResults(long duration, long simulationTime) throws Exception {
     ArrayList<String> csv = new ArrayList<String>();
     csv.add(selfId);
     csv.add(String.valueOf(selfIndex));
-    csv.add(String.valueOf(simulationTime));
+    csv.add(String.valueOf(duration));
     try {
       if (simulationTime <= 0) throw new Exception();
       Long[] latenciesArray = new Long[latencies.size()];
@@ -203,6 +203,7 @@ class Main {
       long percentile75Latency = latenciesArray[latenciesArray.length * 3 / 4];
       long percentile99Latency = latenciesArray[latenciesArray.length * 99 / 100];
       csv.add("OK");
+      csv.add(String.valueOf(simulationTime));
       csv.add(messagesSent.toString());
       csv.add(messagesReceived.toString());
       csv.add(messagesForwarded.toString());
@@ -222,10 +223,11 @@ class Main {
     String results = String.join(",", csv);
     System.out.println("RESULTS: " + results);
     String[] header = {
-      "InstanceIndex",
       "InstanceId",
-      "SimulationTime", // TODO Pre and post simulation time
+      "InstanceIndex",
+      "TestDuration",
       "TestStatus",
+      "SimulationTime", // TODO Pre and post simulation time
       "MessagesSent",
       "MessagesReceived",
       "MessagesForwarded",
@@ -243,6 +245,7 @@ class Main {
   }
 
   public static void main(String args[]) throws Exception {
+    long startTs = System.currentTimeMillis();
     long simulationTime = -1;
     try {
       host = args[0];
@@ -293,7 +296,8 @@ class Main {
     }
     finally {
       Server.stopServer();
-      recordResults(simulationTime);
+      long duration = System.currentTimeMillis() - startTs;
+      recordResults(duration, simulationTime);
     }
   }
 }
