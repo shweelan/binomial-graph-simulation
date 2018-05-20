@@ -10,6 +10,8 @@ import java.io.ByteArrayInputStream;
 import java.util.Random;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.Collections;
+import java.util.Comparator;
 import bn.Controller;
 import bn.Server;
 import bn.DirectConnection;
@@ -27,12 +29,14 @@ class Main {
   private static int nMax = 3;
   private static int numMessages = 1000;
   private static int messageSize = 1024;
-  private static boolean useDirectConnections = false;
+  private static int extraConnectionsCount = 0;
+  private static long reRoutingFrequency = 1000; // milliseconds
   private static ArrayList<String> nodes;
   private static HashMap<Integer, HashSet<Integer>> binomialGraph;
   private static HashMap<Integer, Route> routes;
   private static HashMap<Integer, DirectConnection> connections;
-
+  private static HashMap<Integer, DirectConnection> extraConnections;
+  private static volatile boolean dirtyExtraConnections = false;
   private static LongAdder messagesSent;
   private static LongAdder messagesReceived;
   private static LongAdder messagesForwarded;
@@ -104,23 +108,73 @@ class Main {
     }
   }
 
+  private static DirectConnection connectTo(int destination) throws Exception {
+    String[] split = nodes.get(destination).split(":");
+    String host = split[0];
+    int port = Integer.parseInt(split[1]);
+    return new DirectConnection(destination, host, port);
+  }
+
+  private static void relieveWorstRoutes(Comparator<Route> comparator) throws Exception {
+    dirtyExtraConnections = true;
+    HashMap<Integer, DirectConnection> clone =  new HashMap<Integer, DirectConnection>();
+    clone.putAll(extraConnections);
+    extraConnections.clear();
+    ArrayList<Route> worstRoutes = new ArrayList<Route>(routes.values());
+    HashSet<Integer> routesToRelieve = new HashSet<Integer>();
+    Collections.sort(worstRoutes, comparator);
+    for (int i = 0; i < extraConnectionsCount; i++) {
+      Route route = worstRoutes.get(i);
+      if (route.getRouteLength() <= 1) break;
+      int destination = route.getDestination();
+      routesToRelieve.add(destination);
+    }
+    for (int destination : clone.keySet()) {
+      if (!routesToRelieve.contains(destination)) {
+        clone.get(destination).close();
+      }
+      else {
+        routesToRelieve.remove(destination);
+      }
+    }
+    extraConnections.putAll(clone);
+    for (int destination : routesToRelieve) {
+      extraConnections.put(destination, connectTo(destination));
+    }
+    dirtyExtraConnections = false;
+  }
+
+  private static void relieveLongestRoutes() throws Exception {
+    relieveWorstRoutes(Route.getDescendingLengthComparator());
+  }
+
+  private static void relieveConjestedRoutes() throws Exception {
+    relieveWorstRoutes(Route.getDescendingReductionComparator());
+    for (Route route : routes.values()) {
+      route.resetUsage();
+    }
+  }
+
   private static void openConnections() throws Exception {
     connections = new HashMap<Integer, DirectConnection>();
-
+    extraConnections = new HashMap<Integer, DirectConnection>();
     for (int nodeNum : binomialGraph.get(selfIndex)) {
-      String[] split = nodes.get(nodeNum).split(":");
-      String host = split[0];
-      int port = Integer.parseInt(split[1]);
-      connections.put(nodeNum, new DirectConnection(nodeNum, host, port));
+      connections.put(nodeNum, connectTo(nodeNum));
+    }
+    if (extraConnectionsCount > 0) {
+      relieveLongestRoutes();
     }
   }
 
   private static boolean sendMessage(Message message) {
     final int destination = message.getDestination();
     Route route = routes.get(destination);
-    final int nextHop = route.getRandomViaNode();
-    DirectConnection connection = connections.get(nextHop);
-    // TODO throw Exception if connection == null
+    DirectConnection connection = null;
+    if (!dirtyExtraConnections) connection = extraConnections.get(destination);
+    if (connection == null || connection.isDeactivated()) {
+      final int nextHop = route.getRandomViaNode();
+      connection = connections.get(nextHop);
+    }
     // try non-blocking then blocking send
     boolean sent = connection.sendMessage(message) || connection.sendBlockingMessage(message);
     if (sent) {
@@ -149,7 +203,11 @@ class Main {
     Random random = new Random();
     int messagesCount = 0;
 
+    long lastReRoute = System.currentTimeMillis();
     while (messagesCount < numMessages) {
+      if (System.currentTimeMillis() - lastReRoute >= reRoutingFrequency) {
+        relieveConjestedRoutes();
+      }
       int destination = random.nextInt(nodes.size());
       if (destination == selfIndex) continue;
       long ts = controller.getTimestamp();
@@ -253,7 +311,7 @@ class Main {
       if (config.containsKey("nmax")) nMax = Integer.parseInt(config.get("nmax"));
       if (config.containsKey("msgcount")) numMessages = Integer.parseInt(config.get("msgcount"));
       if (config.containsKey("msgsize")) messageSize = Integer.parseInt(config.get("msgsize"));
-      if (config.containsKey("usedirect")) useDirectConnections = Boolean.parseBoolean(config.get("usedirect"));
+      if (config.containsKey("extracons")) extraConnectionsCount = Integer.parseInt(config.get("extracons"));
       MessageRouter router = Main::route;
       StatsUpdater updater = Main::updateStats;
       Server.startServer(port, router, updater);

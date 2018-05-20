@@ -3,6 +3,7 @@ package bn;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.Comparator;
 
 public class Route {
   private static Random random = new Random();
@@ -11,6 +12,19 @@ public class Route {
   private int routeLength;
   private LongAdder usage;
   private ArrayList<Integer> viaNodes = new ArrayList<Integer>();
+  private static Comparator<Route> descendingLengthComparator = new Comparator<Route>() {
+    @Override
+    public int compare(Route rt1, Route rt2) {
+      return rt2.getRouteLength() - rt1.getRouteLength();
+    }
+  };
+
+  private static Comparator<Route> descendingReductionComparator = new Comparator<Route>() {
+    @Override
+    public int compare(Route rt1, Route rt2) {
+      return rt2.getRouteReductionRate() - rt1.getRouteReductionRate();
+    }
+  };
 
   public Route(int src, int dest, int length, int viaNode) {
     // shortest found Route
@@ -21,16 +35,28 @@ public class Route {
     viaNodes.add(viaNode);
   }
 
+  public int getDestination() {
+    return destination;
+  }
+
+  public static Comparator<Route> getDescendingLengthComparator() {
+    return descendingLengthComparator;
+  }
+
+  public static Comparator<Route> getDescendingReductionComparator() {
+    return descendingReductionComparator;
+  }
+
+  public int getRouteReductionRate() {
+    return (routeLength - 1) * usage.intValue();
+  }
+
   public void used() {
     usage.increment();
   }
 
-  public long getUsage() {
-    return usage.longValue();
-  }
-
-  public long getUsageAndReset() {
-    return usage.sumThenReset();
+  public void resetUsage() {
+    usage.reset();
   }
 
   public int getRouteLength() {

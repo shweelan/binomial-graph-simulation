@@ -12,9 +12,11 @@ class OutConnectionWorker implements Runnable {
   private static Controller controller;
   private Socket socket;
   private LinkedBlockingDeque<Message> queue;
+  private int remoteNodeNumber;
 
-  public OutConnectionWorker(Socket socket, LinkedBlockingDeque<Message> queue) throws Exception {
+  public OutConnectionWorker(int nodeNum, Socket socket, LinkedBlockingDeque<Message> queue) throws Exception {
     controller = Controller.getInstance();
+    remoteNodeNumber = nodeNum;
     this.socket = socket;
     this.queue = queue;
   }
@@ -43,6 +45,7 @@ class OutConnectionWorker implements Runnable {
       finally {
         outputStream.close();
         socket.close();
+        System.out.println("Disconnected from Node#" + remoteNodeNumber);
       }
     } catch(Exception e) {
       e.printStackTrace();
@@ -57,6 +60,7 @@ public class DirectConnection {
   private String remoteHost;
   private int remotePort;
   private Socket socket;
+  private volatile boolean deactivated = false;
   private OutConnectionWorker worker;
   private LinkedBlockingDeque<Message> queue;
 
@@ -67,18 +71,18 @@ public class DirectConnection {
     socket = new Socket(host, port);
     System.out.println("Connected to Node#" + remoteNodeNumber);
     queue = new LinkedBlockingDeque<Message>(QUEUE_SIZE);
-    worker = new OutConnectionWorker(socket, queue);
+    worker = new OutConnectionWorker(remoteNodeNumber, socket, queue);
     Thread thread = new Thread(worker);
     thread.start();
   }
 
   public boolean sendMessage(Message message) {
-    return queue.offer(message);
+    return deactivated || queue.offer(message);
   }
 
   public boolean sendBlockingMessage(Message message) {
     try {
-      return queue.offer(message, QUEUE_OVERFLOW_BLOCK_TIMEOUT, TimeUnit.MILLISECONDS); // Blocking
+      return deactivated || queue.offer(message, QUEUE_OVERFLOW_BLOCK_TIMEOUT, TimeUnit.MILLISECONDS); // Blocking
     } catch(InterruptedException e) {
       return false;
     }
@@ -88,9 +92,13 @@ public class DirectConnection {
     return remoteNodeNumber;
   }
 
+  public boolean isDeactivated() {
+    return deactivated;
+  }
+
   public void close() throws Exception {
+    deactivated = true;
     Message poison = new Message();
     queue.offer(poison);
-    System.out.println("Disconnected from Node#" + remoteNodeNumber);
   }
 }
