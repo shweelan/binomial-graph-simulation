@@ -17,6 +17,7 @@ public class Controller {
   private static final String READY_COUNT_KEY = "NUM_READY_NODES";
   private static final String CONFIG_KEY = "CONFIG";
   private static final String RESULTS_KEY = "RESULTS";
+  private static final String RESULTS_HEADER_KEY = "RESULTS_HEADER";
   private static final String TEST_ID_KEY = "TEST_NAME";
   private static Long timestampDiff = null;
 
@@ -151,7 +152,7 @@ public class Controller {
     return Integer.parseInt(readyCountStr);
   }
 
-  public void recordResults(String testId, String key, String result) throws Exception {
+  public void recordResults(String testId, String[] header, String key, String result) throws Exception {
     String[] command = {
       "HSET",
       RESULTS_KEY + "_" + testId,
@@ -159,6 +160,12 @@ public class Controller {
       result
     };
     redisAPI(command);
+    String[] headerCommand = {
+      "SETNX",
+      RESULTS_HEADER_KEY + "_" + testId,
+      String.join(",", header)
+    };
+    redisAPI(headerCommand);
   }
 
   public HashMap<String, String> getConfig() throws Exception {

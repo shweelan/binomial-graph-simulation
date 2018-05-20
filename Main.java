@@ -176,10 +176,12 @@ class Main {
   }
 
   private static void recordResults(long simulationTime) throws Exception {
-    String results = "";
+    ArrayList<String> csv = new ArrayList<String>();
+    csv.add(selfId);
+    csv.add(String.valueOf(selfIndex));
+    csv.add(String.valueOf(simulationTime));
     try {
       if (simulationTime <= 0) throw new Exception();
-      ArrayList<String> csv = new ArrayList<String>();
       Long[] latenciesArray = new Long[latencies.size()];
       latenciesArray = latencies.toArray(latenciesArray);
       Arrays.sort(latenciesArray);
@@ -200,9 +202,7 @@ class Main {
       long percentile25Latency = latenciesArray[latenciesArray.length / 4];
       long percentile75Latency = latenciesArray[latenciesArray.length * 3 / 4];
       long percentile99Latency = latenciesArray[latenciesArray.length * 99 / 100];
-      csv.add(String.valueOf(selfIndex));
-      csv.add(selfId);
-      csv.add(String.valueOf(simulationTime));
+      csv.add("OK");
       csv.add(messagesSent.toString());
       csv.add(messagesReceived.toString());
       csv.add(messagesForwarded.toString());
@@ -215,13 +215,31 @@ class Main {
       csv.add(String.valueOf(percentile99Latency));
       csv.add(String.valueOf(maxLatency));
       csv.add(String.valueOf(controller.getTimeDiff()));
-      results = String.join(",", csv);
     } catch(Exception e) {
       e.printStackTrace();
-      results = selfIndex + "," + selfId + "," + simulationTime + ",ERROR";
+      csv.add("ERROR");
     }
+    String results = String.join(",", csv);
     System.out.println("RESULTS: " + results);
-    controller.recordResults(testId, selfId, results);
+    String[] header = {
+      "InstanceIndex",
+      "InstanceId",
+      "SimulationTime", // TODO Pre and post simulation time
+      "TestStatus",
+      "MessagesSent",
+      "MessagesReceived",
+      "MessagesForwarded",
+      "AverageLatency",
+      "MinLatency",
+      "1PercentileLatency",
+      "25PercentileLatency",
+      "MedianLatency",
+      "75PercentileLatency",
+      "99PercentileLatency",
+      "MaxLatency",
+      "RemoteTimestampDiff"
+    };
+    controller.recordResults(testId, header, selfId, results);
   }
 
   public static void main(String args[]) throws Exception {
