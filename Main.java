@@ -37,9 +37,17 @@ class Main {
   private static HashMap<Integer, DirectConnection> connections;
   private static HashMap<Integer, DirectConnection> extraConnections;
   private static volatile boolean dirtyExtraConnections = false;
-  private static LongAdder messagesSent;
-  private static LongAdder messagesReceived;
-  private static LongAdder messagesForwarded;
+  private static volatile boolean simulationStarted = false;
+  private static volatile boolean simulationEnded = false;
+  private static LongAdder messagesSentDuringSimulation;
+  private static LongAdder messagesReceivedDuringSimulation;
+  private static LongAdder messagesForwardedDuringSimulation;
+  private static LongAdder messagesSentBeforeSimulation;
+  private static LongAdder messagesReceivedBeforeSimulation;
+  private static LongAdder messagesForwardedBeforeSimulation;
+  private static LongAdder messagesSentAfterSimulation;
+  private static LongAdder messagesReceivedAfterSimulation;
+  private static LongAdder messagesForwardedAfterSimulation;
   private static ConcurrentLinkedQueue<Long> latencies;
 
   private static void buildBinomialGraphNetwork() throws Exception {
@@ -166,6 +174,18 @@ class Main {
     }
   }
 
+  private static void increment(LongAdder counterDuring, LongAdder counterBefore, LongAdder counterAfter) {
+    if (simulationEnded) {
+      counterAfter.increment();
+    }
+    else if (simulationStarted) {
+      counterDuring.increment();
+    }
+    else {
+      counterBefore.increment();
+    }
+  }
+
   private static boolean sendMessage(Message message) {
     final int destination = message.getDestination();
     Route route = routes.get(destination);
@@ -179,7 +199,7 @@ class Main {
     boolean sent = connection.sendMessage(message) || connection.sendBlockingMessage(message);
     if (sent) {
       route.used();
-      messagesSent.increment();
+      increment(messagesSentDuringSimulation, messagesSentBeforeSimulation, messagesSentAfterSimulation);
     }
     return sent;
   }
@@ -189,15 +209,16 @@ class Main {
   }
 
   private static void route(Message message) {
-    messagesReceived.increment();
+    increment(messagesReceivedDuringSimulation, messagesReceivedBeforeSimulation, messagesReceivedAfterSimulation);
     if (message.getDestination() != selfIndex) {
       while (!sendMessage(message));
-      messagesForwarded.increment();
+      increment(messagesForwardedDuringSimulation, messagesForwardedBeforeSimulation, messagesForwardedAfterSimulation);
       System.out.println("FORWARD MESSAGE:" + message);
     }
   }
 
   private static void startSimulation() throws Exception {
+    simulationStarted = true;
     System.out.println("Simulation Started");
 
     Random random = new Random();
@@ -217,7 +238,7 @@ class Main {
         if (messagesCount % 101 == 0) Thread.sleep(100);
       }
     }
-
+    simulationEnded = true;
     for (DirectConnection connection : connections.values()) {
       connection.close();
     }
@@ -253,9 +274,21 @@ class Main {
       long percentile99Latency = latenciesArray[latenciesArray.length * 99 / 100];
       csv.add("OK");
       csv.add(String.valueOf(simulationTime));
-      csv.add(messagesSent.toString());
-      csv.add(messagesReceived.toString());
-      csv.add(messagesForwarded.toString());
+      csv.add(messagesSentDuringSimulation.toString());
+      csv.add(messagesReceivedDuringSimulation.toString());
+      csv.add(messagesForwardedDuringSimulation.toString());
+      csv.add(messagesSentBeforeSimulation.toString());
+      csv.add(messagesReceivedBeforeSimulation.toString());
+      csv.add(messagesForwardedBeforeSimulation.toString());
+      csv.add(messagesSentAfterSimulation.toString());
+      csv.add(messagesReceivedAfterSimulation.toString());
+      csv.add(messagesForwardedAfterSimulation.toString());
+      long totalSent = messagesSentDuringSimulation.longValue() + messagesSentBeforeSimulation.longValue() + messagesSentAfterSimulation.longValue();
+      long totalReceived = messagesReceivedDuringSimulation.longValue() + messagesReceivedBeforeSimulation.longValue() + messagesReceivedAfterSimulation.longValue();
+      long totalForwarded = messagesForwardedDuringSimulation.longValue() + messagesForwardedBeforeSimulation.longValue() + messagesForwardedAfterSimulation.longValue();
+      csv.add(String.valueOf(totalSent));
+      csv.add(String.valueOf(totalReceived));
+      csv.add(String.valueOf(totalForwarded));
       csv.add(String.valueOf(averageLatency));
       csv.add(String.valueOf(minLatency));
       csv.add(String.valueOf(percentile1Latency));
@@ -277,9 +310,18 @@ class Main {
       "TestDuration",
       "TestStatus",
       "SimulationTime", // TODO Pre and post simulation time
-      "MessagesSent",
-      "MessagesReceived",
-      "MessagesForwarded",
+      "MessagesSentDuringSimulation",
+      "MessagesReceivedDuringSimulation",
+      "MessagesForwardedDuringSimulation",
+      "MessagesSentBeforeSimulation",
+      "MessagesReceivedBeforeSimulation",
+      "MessagesForwardedBeforeSimulation",
+      "MessagesSentAfterSimulation",
+      "MessagesReceivedAfterSimulation",
+      "MessagesForwardedAfterSimulation",
+      "TotalMessagesSent",
+      "TotalMessagesReceived",
+      "TotalMessagesForwarded",
       "AverageLatency",
       "MinLatency",
       "1PercentileLatency",
@@ -300,9 +342,15 @@ class Main {
       host = args[0];
       port = Integer.parseInt(args[1]);
       selfId = host + ":" + port;
-      messagesSent = new LongAdder();
-      messagesReceived = new LongAdder();
-      messagesForwarded = new LongAdder();
+      messagesSentDuringSimulation = new LongAdder();
+      messagesReceivedDuringSimulation = new LongAdder();
+      messagesForwardedDuringSimulation = new LongAdder();
+      messagesSentBeforeSimulation = new LongAdder();
+      messagesReceivedBeforeSimulation = new LongAdder();
+      messagesForwardedBeforeSimulation = new LongAdder();
+      messagesSentAfterSimulation = new LongAdder();
+      messagesReceivedAfterSimulation = new LongAdder();
+      messagesForwardedAfterSimulation = new LongAdder();
       latencies = new ConcurrentLinkedQueue<Long>();
       if (args.length > 2) Controller.setUrl(args[2]);
       controller = Controller.getInstance();
