@@ -124,6 +124,9 @@ class Main {
   }
 
   private static void relieveWorstRoutes(Comparator<Route> comparator) throws Exception {
+    if (extraConnectionsCount <= 0) {
+      return;
+    }
     dirtyExtraConnections = true;
     HashMap<Integer, DirectConnection> clone =  new HashMap<Integer, DirectConnection>();
     clone.putAll(extraConnections);
@@ -175,9 +178,7 @@ class Main {
     for (int nodeNum : binomialGraph.get(selfIndex)) {
       connections.put(nodeNum, connectTo(nodeNum));
     }
-    if (extraConnectionsCount > 0) {
-      relieveLongestRoutes();
-    }
+    relieveLongestRoutes();
   }
 
   private static void increment(LongAdder counterDuring, LongAdder counterBefore, LongAdder counterAfter) {
