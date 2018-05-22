@@ -19,6 +19,7 @@ class InConnectionWorker implements Runnable {
   private StatsUpdater updater;
   private ArrayList<Long> latencies;
   private Controller controller;
+  private volatile boolean terminated = false;
 
   public InConnectionWorker(Socket socket, MessageRouter router, StatsUpdater updater) throws Exception {
     this.controller = Controller.getInstance();
@@ -28,6 +29,10 @@ class InConnectionWorker implements Runnable {
     this.latencies = new ArrayList<Long>();
     this.id = this.socket.getInetAddress() + ":" + String.valueOf(this.socket.getPort());
     System.out.println("Connection `" + this.id + "` connected!");
+  }
+
+  public boolean isDead() {
+    return terminated;
   }
 
   public void run() {
@@ -56,6 +61,7 @@ class InConnectionWorker implements Runnable {
         updater.updateStats(latencies);
         inputStream.close();
         this.socket.close();
+        terminated = true;
         System.out.println("Connection `" + this.id + "` disconnected!");
       }
     } catch (IOException e) {
@@ -107,6 +113,11 @@ class ServerWorker implements Runnable {
       System.out.println("Server Closed");
       for (InConnectionWorker worker : workers) {
         worker.stop();
+      }
+      for (InConnectionWorker worker : workers) {
+        while (!worker.isDead()) {
+          Thread.sleep(100);
+        }
       }
     }
   }
