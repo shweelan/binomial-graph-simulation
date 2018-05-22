@@ -31,6 +31,7 @@ class Main {
   private static int messageSize = 1024;
   private static int extraConnectionsCount = 0;
   private static long reRoutingFrequency = 1000; // milliseconds
+  private static int[] dataDistribution = null;
   private static ArrayList<String> nodes;
   private static HashMap<Integer, HashSet<Integer>> binomialGraph;
   private static HashMap<Integer, Route> routes;
@@ -231,6 +232,8 @@ class Main {
     simulationStarted = true;
     System.out.println("Simulation Started");
 
+    long[] toNodes = new long[nodes.size()];
+    Arrays.fill(toNodes, 0L);
     Random random = new Random();
     int messagesCount = 0;
 
@@ -241,8 +244,20 @@ class Main {
         relieveConjestedRoutes();
         lastReRoute = now;
       }
-      int destination = random.nextInt(nodes.size());
+      int destination = -1;
+      if (dataDistribution != null) {
+        int randomDist = random.nextInt(100) + 1; // 1 - 100
+        int ret = Arrays.binarySearch(dataDistribution, randomDist);
+        if (ret < 0) ret = ++ret * -1;
+        if (ret < dataDistribution.length && ret < nodes.size()) {
+          destination = ret;
+        }
+      }
+      if (destination < 0) {
+        destination = random.nextInt(nodes.size());
+      }
       if (destination == selfIndex) continue;
+      toNodes[destination]++;
       long ts = controller.getTimestamp();
       Message message = new Message(selfIndex, destination, ts, messageSize);
       if (sendMessage(message)) {
@@ -252,6 +267,7 @@ class Main {
     }
     simulationEnded = true;
     System.out.println("Simulation Ended");
+    System.out.println("Messages sent to each Node " + Arrays.toString(toNodes));
   }
 
   private static void recordResults(long duration, long simulationTime) throws Exception {
@@ -261,6 +277,14 @@ class Main {
     csv.add(String.valueOf(duration));
     try {
       if (simulationTime <= 0) throw new Exception();
+      if (latencies.size() == 0) {
+        latencies.add(new Long(-2912));
+        latencies.add(new Long(-2912));
+        latencies.add(new Long(-2912));
+        latencies.add(new Long(-2912));
+        latencies.add(new Long(-2912));
+        latencies.add(new Long(-2912));
+      }
       Long[] latenciesArray = new Long[latencies.size()];
       latenciesArray = latencies.toArray(latenciesArray);
       Arrays.sort(latenciesArray);
@@ -369,6 +393,18 @@ class Main {
       if (config.containsKey("msgcount")) numMessages = Integer.parseInt(config.get("msgcount"));
       if (config.containsKey("msgsize")) messageSize = Integer.parseInt(config.get("msgsize"));
       if (config.containsKey("extracons")) extraConnectionsCount = Integer.parseInt(config.get("extracons"));
+      if (config.containsKey("reroutefreq")) reRoutingFrequency = Long.parseLong(config.get("reroutfreq"));
+      if (config.containsKey("datadist")) {
+        int sum = 0;
+        String[] split = config.get("datadist").split(",");
+        dataDistribution = new int[split.length];
+        for (int i = 0; i < split.length; i++) {
+          int distPercentage = Integer.parseInt(split[i].trim());
+          sum += distPercentage;
+          if (distPercentage <= 0 || sum >= 100) throw new Exception("ERROR! invalid data distribution percentages");
+          dataDistribution[i] = sum;
+        }
+      }
       MessageRouter router = Main::route;
       StatsUpdater updater = Main::updateStats;
       Server.startServer(port, router, updater);
@@ -396,17 +432,17 @@ class Main {
       while (controller.getAnnouncedNodesCount() > 0) {
         Thread.sleep(1000);
       }
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+    }
+    finally {
       for (DirectConnection connection : connections.values()) {
         connection.close();
       }
       for (DirectConnection connection : extraConnections.values()) {
         connection.close();
       }
-    }
-    catch (Exception e) {
-      e.printStackTrace();
-    }
-    finally {
       Server.stopServer();
       long duration = System.currentTimeMillis() - startTs;
       recordResults(duration, simulationTime);
