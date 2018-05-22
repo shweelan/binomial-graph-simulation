@@ -13,12 +13,17 @@ class OutConnectionWorker implements Runnable {
   private Socket socket;
   private LinkedBlockingDeque<Message> queue;
   private int remoteNodeNumber;
+  private volatile boolean terminated = false;
 
   public OutConnectionWorker(int nodeNum, Socket socket, LinkedBlockingDeque<Message> queue) throws Exception {
     controller = Controller.getInstance();
     remoteNodeNumber = nodeNum;
     this.socket = socket;
     this.queue = queue;
+  }
+
+  public boolean isDead() {
+    return terminated;
   }
 
   public void run() {
@@ -45,6 +50,7 @@ class OutConnectionWorker implements Runnable {
       finally {
         outputStream.close();
         socket.close();
+        terminated = true;
         System.out.println("Disconnected from Node#" + remoteNodeNumber);
       }
     } catch(Exception e) {
@@ -99,6 +105,9 @@ public class DirectConnection {
   public void close() throws Exception {
     deactivated = true;
     Message poison = new Message();
-    queue.offer(poison);
+    while(!queue.offer(poison, QUEUE_OVERFLOW_BLOCK_TIMEOUT, TimeUnit.MILLISECONDS));
+    while(!worker.isDead()) {
+      Thread.sleep(100);
+    }
   }
 }

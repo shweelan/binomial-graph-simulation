@@ -277,14 +277,6 @@ class Main {
     csv.add(String.valueOf(duration));
     try {
       if (simulationTime <= 0) throw new Exception();
-      if (latencies.size() == 0) {
-        latencies.add(new Long(-2912));
-        latencies.add(new Long(-2912));
-        latencies.add(new Long(-2912));
-        latencies.add(new Long(-2912));
-        latencies.add(new Long(-2912));
-        latencies.add(new Long(-2912));
-      }
       Long[] latenciesArray = new Long[latencies.size()];
       latenciesArray = latencies.toArray(latenciesArray);
       Arrays.sort(latenciesArray);
