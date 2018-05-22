@@ -131,24 +131,30 @@ class Main {
     ArrayList<Route> worstRoutes = new ArrayList<Route>(routes.values());
     HashSet<Integer> routesToRelieve = new HashSet<Integer>();
     Collections.sort(worstRoutes, comparator);
-    for (int i = 0; i < extraConnectionsCount; i++) {
-      Route route = worstRoutes.get(i);
-      if (route.getRouteLength() <= 1) break;
-      int destination = route.getDestination();
-      routesToRelieve.add(destination);
+    System.out.println("###################### " + worstRoutes);
+    int i = 0;
+    for (Route route : worstRoutes) {
+      if (route.getRouteLength() > 1) {
+        routesToRelieve.add(route.getDestination());
+        if (++i >= extraConnectionsCount) {
+          break;
+        }
+      }
     }
-    for (int destination : clone.keySet()) {
-      if (!routesToRelieve.contains(destination)) {
-        clone.get(destination).close();
+    System.out.println("###################### " + routesToRelieve);
+    for (int destination : routesToRelieve) {
+      if (clone.containsKey(destination)) {
+        // Connection already exists
+        extraConnections.put(destination, clone.remove(destination));
       }
       else {
-        routesToRelieve.remove(destination);
+        extraConnections.put(destination, connectTo(destination));
       }
     }
-    extraConnections.putAll(clone);
-    for (int destination : routesToRelieve) {
-      extraConnections.put(destination, connectTo(destination));
+    for (int destination : clone.keySet()) {
+      clone.get(destination).close();
     }
+    System.out.println("###################### " + extraConnections);
     dirtyExtraConnections = false;
   }
 
@@ -191,6 +197,9 @@ class Main {
     Route route = routes.get(destination);
     DirectConnection connection = null;
     if (!dirtyExtraConnections) connection = extraConnections.get(destination);
+    if (connection != null) {
+      System.out.println("###################### SENDING DIRECT" + destination);
+    }
     if (connection == null || connection.isDeactivated()) {
       final int nextHop = route.getRandomViaNode();
       connection = connections.get(nextHop);
@@ -226,8 +235,10 @@ class Main {
 
     long lastReRoute = System.currentTimeMillis();
     while (messagesCount < numMessages) {
-      if (System.currentTimeMillis() - lastReRoute >= reRoutingFrequency) {
+      long now = System.currentTimeMillis();
+      if (now - lastReRoute >= reRoutingFrequency) {
         relieveConjestedRoutes();
+        lastReRoute = now;
       }
       int destination = random.nextInt(nodes.size());
       if (destination == selfIndex) continue;
@@ -235,13 +246,10 @@ class Main {
       Message message = new Message(selfIndex, destination, ts, messageSize);
       if (sendMessage(message)) {
         messagesCount++;
-        if (messagesCount % 101 == 0) Thread.sleep(100);
+        if (messagesCount % 101 == 0) Thread.sleep(200);
       }
     }
     simulationEnded = true;
-    for (DirectConnection connection : connections.values()) {
-      connection.close();
-    }
     System.out.println("Simulation Ended");
   }
 
@@ -309,7 +317,7 @@ class Main {
       "InstanceIndex",
       "TestDuration",
       "TestStatus",
-      "SimulationTime", // TODO Pre and post simulation time
+      "SimulationTime",
       "MessagesSentDuringSimulation",
       "MessagesReceivedDuringSimulation",
       "MessagesForwardedDuringSimulation",
@@ -386,6 +394,12 @@ class Main {
       controller.delAnnouncedNode(selfId);
       while (controller.getAnnouncedNodesCount() > 0) {
         Thread.sleep(1000);
+      }
+      for (DirectConnection connection : connections.values()) {
+        connection.close();
+      }
+      for (DirectConnection connection : extraConnections.values()) {
+        connection.close();
       }
     }
     catch (Exception e) {

@@ -12,6 +12,7 @@ public class Route {
   private int routeLength;
   private LongAdder usage;
   private ArrayList<Integer> viaNodes = new ArrayList<Integer>();
+
   private static Comparator<Route> descendingLengthComparator = new Comparator<Route>() {
     @Override
     public int compare(Route rt1, Route rt2) {
@@ -76,6 +77,6 @@ public class Route {
   }
 
   public String toString() {
-    return ("Route< Node#" + source + " *--|" + routeLength + "|--> Node#" + destination + " via Nodes " + viaNodes.toString() + " >");
+    return ("Route#" + destination + " < Node#" + source + " *--|" + routeLength + "|--> Node#" + destination + " via Nodes " + viaNodes.toString() + " >");
   }
 }
