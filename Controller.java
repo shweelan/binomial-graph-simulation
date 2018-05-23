@@ -16,7 +16,7 @@ public class Controller {
   private static final String NODES_COUNT_KEY = "NUM_TOTAL_NODES";
   private static final String READY_COUNT_KEY = "NUM_READY_NODES";
   private static final String CONFIG_KEY = "CONFIG";
-  private static final String RESULTS_KEY = "RESULTS";
+  private static final String RESULTS_KEY = "RESULTS_DATA";
   private static final String RESULTS_HEADER_KEY = "RESULTS_HEADER";
   private static final String TEST_ID_KEY = "TEST_NAME";
   private static Long timestampDiff = null;
@@ -29,7 +29,6 @@ public class Controller {
 
   public static Controller getInstance() throws Exception {
     init();
-    timestampDiff = new Long(0L);
     if (timestampDiff == null) {
       // synchronize timestamp with redis
       String[] command = {
@@ -203,5 +202,44 @@ public class Controller {
 
   public long getTimeDiff() {
     return timestampDiff;
+  }
+
+  public String[] getResultsKeys(String pattern) throws Exception {
+    String[] command = {
+      "KEYS",
+      RESULTS_KEY + "_" + pattern
+    };
+    String ret = redisAPI(command);
+    if (ret.equals("")) return new String[0];
+    String[] keys = ret.split(SEPARATOR);
+    for (int i = 0; i < keys.length; i++) {
+      keys[i] = keys[i].replace(RESULTS_KEY + "_", "");
+    }
+    return keys;
+  }
+
+  public String getResultsHeader(String key) throws Exception {
+    String[] command = {
+      "GET",
+      RESULTS_HEADER_KEY + "_" + key
+    };
+    return redisAPI(command);
+  }
+
+  public String[] getResults(String key) throws Exception {
+    String[] command = {
+      "HGETALL",
+      RESULTS_KEY + "_" + key
+    };
+    String ret = redisAPI(command);
+    if (ret.equals("")) return new String[0];
+    String[] mapped = ret.split(SEPARATOR);
+    System.out.println();
+    System.out.println();
+    String[] results = new String[mapped.length / 2];
+    for (int i = 0; i < results.length; i++) {
+      results[i] = mapped[2 * i + 1];
+    }
+    return results;
   }
 }
