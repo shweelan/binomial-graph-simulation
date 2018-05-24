@@ -75,6 +75,7 @@ public class DirectConnection {
     remoteHost = host;
     remotePort = port;
     socket = new Socket(host, port);
+    socket.setSendBufferSize(1024 * 1024 * 1024);
     System.out.println("Connected to Node#" + remoteNodeNumber);
     queue = new LinkedBlockingDeque<Message>(QUEUE_SIZE);
     worker = new OutConnectionWorker(remoteNodeNumber, socket, queue);

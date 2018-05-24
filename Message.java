@@ -44,17 +44,17 @@ public class Message {
   private byte[] read(InputStream inputStream, int len) throws Exception {
     if (len < 0) throw new IllegalArgumentException();
     byte[] data = new byte[len];
-    int i = 0;
+    int read = inputStream.read(data, 0, len);
+    if (read == len) return data;
     int retries = 0;
-    while (i < len) {
-      int ret = inputStream.read();
-      if (ret < 0) {
-        System.out.println("I am here " + (retries + 1));
-        if (++retries == DATA_READ_RETRIES) throw new EOFException("ERROR! Bad message, Expected:" + len + " Got:" + i);
+    while (read < len) {
+      int _read = inputStream.read(data, read, len - read);
+      if (_read < 0) {
+        if (++retries == DATA_READ_RETRIES) throw new EOFException("ERROR! Bad message, Expected:" + len + " Got:" + read);
       }
       else {
         retries = 0;
-        data[i++] = (byte) ret;
+        read += _read;
       }
     }
     return data;
