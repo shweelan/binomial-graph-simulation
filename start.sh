@@ -4,6 +4,9 @@ set -e
 placeholder="1"
 bootstrap_key="BOOT"
 redis_url="http://127.0.0.1:7379"
+if [ "$1" != "" ]; then
+  redis_url=$1
+fi
 if [[ $OSTYPE == "darwin"* ]] ; then
   ip="$(ifconfig en1 inet | tail -1 | cut -d ' ' -f 2)"
 elif [[ "$OSTYPE" == "linux-gnu" ]]; then
