@@ -284,7 +284,7 @@ class Main {
       csv.add("\"" + Arrays.toString(dataDistribution) + "\"");
     }
     else {
-      csv.add("Totally Random!");
+      csv.add("Random");
     }
     try {
       if (simulationTime <= 0) throw new Exception();
