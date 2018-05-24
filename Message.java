@@ -61,7 +61,7 @@ public class Message {
     data = new byte[dataSize];
     read = inputStream.read(data, 0, data.length);
     if (read != data.length) {
-      throw new Exception("ERROR! Bad message");
+      throw new Exception("ERROR! Bad message, Expected: " + data.length + " Got: " + read);
     }
   }
 
