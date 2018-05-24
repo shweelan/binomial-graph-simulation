@@ -281,7 +281,7 @@ class Main {
     csv.add(String.valueOf(extraConnectionsCount));
     csv.add(String.valueOf(reRoutingFrequency));
     if (dataDistribution != null) {
-      csv.add("\"" + Arrays.toString(dataDistribution) + "\"");
+      csv.add("\"" + Arrays.toString(dataDistribution).replace(" ", "") + "\"");
     }
     else {
       csv.add("Random");
