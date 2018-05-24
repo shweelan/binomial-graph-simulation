@@ -262,7 +262,7 @@ class Main {
       Message message = new Message(selfIndex, destination, ts, messageSize);
       if (sendMessage(message)) {
         messagesCount++;
-        if (messagesCount % 101 == 0) Thread.sleep(200);
+        if (messagesCount % 101 == 0) Thread.sleep(300);
       }
     }
     simulationEnded = true;

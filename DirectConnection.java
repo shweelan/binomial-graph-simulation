@@ -60,6 +60,7 @@ class OutConnectionWorker implements Runnable {
 }
 
 public class DirectConnection {
+  private static final int BUFFER_SIZE = 1024 * 1024 * 1024;
   private static final int QUEUE_SIZE = 1024; // Messages before blocking
   private static final long QUEUE_OVERFLOW_BLOCK_TIMEOUT = 10; // Milliseconds
   private int remoteNodeNumber;
@@ -75,7 +76,7 @@ public class DirectConnection {
     remoteHost = host;
     remotePort = port;
     socket = new Socket(host, port);
-    socket.setSendBufferSize(1024 * 1024 * 1024);
+    socket.setSendBufferSize(BUFFER_SIZE);
     System.out.println("Connected to Node#" + remoteNodeNumber);
     queue = new LinkedBlockingDeque<Message>(QUEUE_SIZE);
     worker = new OutConnectionWorker(remoteNodeNumber, socket, queue);
