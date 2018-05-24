@@ -28,7 +28,7 @@ class Main {
   private static int selfIndex;
   private static int nMax = 3;
   private static int numMessages = 1000;
-  private static int messageSize = 1024;
+  private static int messageSize = 4096;
   private static int extraConnectionsCount = 0;
   private static long reRoutingFrequency = 1000; // milliseconds
   private static int[] dataDistribution = null;
@@ -275,6 +275,17 @@ class Main {
     csv.add(selfId);
     csv.add(String.valueOf(selfIndex));
     csv.add(String.valueOf(duration));
+    csv.add(String.valueOf(nMax));
+    csv.add(String.valueOf(numMessages));
+    csv.add(String.valueOf(messageSize));
+    csv.add(String.valueOf(extraConnectionsCount));
+    csv.add(String.valueOf(reRoutingFrequency));
+    if (dataDistribution != null) {
+      csv.add("\"" + Arrays.toString(dataDistribution) + "\"");
+    }
+    else {
+      csv.add("Totally Random!");
+    }
     try {
       if (simulationTime <= 0) throw new Exception();
       Long[] latenciesArray = new Long[latencies.size()];
@@ -333,6 +344,12 @@ class Main {
       "InstanceId",
       "InstanceIndex",
       "TestDuration",
+      "NMax",
+      "NumMessages",
+      "MessageSize",
+      "ExtraConnectionsCount",
+      "ReRoutingFrequency",
+      "DataDistribution",
       "TestStatus",
       "SimulationTime",
       "MessagesSentDuringSimulation",
