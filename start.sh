@@ -3,9 +3,10 @@ set -e
 
 placeholder="1"
 bootstrap_key="BOOT"
+num_nodes_per_machine=$1
 redis_url="http://127.0.0.1:7379"
-if [ "$1" != "" ]; then
-  redis_url=$1
+if [ "$2" != "" ]; then
+  redis_url=$2
 fi
 if [[ $OSTYPE == "darwin"* ]] ; then
   ip="$(ifconfig en1 inet | tail -1 | cut -d ' ' -f 2)"
@@ -14,7 +15,6 @@ elif [[ "$OSTYPE" == "linux-gnu" ]]; then
 else
   exit -1
 fi
-num_nodes_per_machine="10"
 starting_port="2912"
 total_nodes_key="NUM_TOTAL_NODES"
 ready_nodes_key="NUM_READY_NODES"

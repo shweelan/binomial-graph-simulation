@@ -11,7 +11,8 @@ if [ ! -d "$clone_dir_name" ] ; then
 fi
 
 redis_url="http://10.10.0.11:7379"
+num_nodes_per_machine="6"
 
 cd "$clone_dir_name"
 chmod +x "start.sh"
-/bin/bash ./start.sh $redis_url > "start.log"  2>&1 &
+/bin/bash ./start.sh $num_nodes_per_machine $redis_url > "start.log"  2>&1 &

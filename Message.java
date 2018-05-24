@@ -6,8 +6,10 @@ import java.nio.ByteOrder;
 import java.lang.System;
 import java.io.InputStream;
 import java.io.EOFException;
+import java.lang.IllegalArgumentException;
 
 public class Message {
+  private static final int DATA_READ_RETRIES = 5;
   private static Random random = new Random();
   private static final int HEADER_LENGTH = Long.BYTES + 5 * Integer.BYTES;
   public static enum Type {
@@ -39,15 +41,27 @@ public class Message {
 
   // TODO add error messages
 
+  private byte[] read(InputStream inputStream, int len) throws Exception {
+    if (len < 0) throw new IllegalArgumentException();
+    byte[] data = new byte[len];
+    int i = 0;
+    int retries = 0;
+    while (i < len) {
+      int ret = inputStream.read();
+      if (ret < 0) {
+        System.out.println("I am here " + (retries + 1));
+        if (++retries == DATA_READ_RETRIES) throw new EOFException("ERROR! Bad message, Expected:" + len + " Got:" + i);
+      }
+      else {
+        retries = 0;
+        data[i++] = (byte) ret;
+      }
+    }
+    return data;
+  }
+
   public Message(InputStream inputStream) throws Exception {
-    byte[] header = new byte[HEADER_LENGTH];
-    int read = inputStream.read(header, 0, header.length);
-    if (read < 0) {
-      throw new EOFException();
-    }
-    else if (read != HEADER_LENGTH) {
-      throw new Exception("ERROR! Bad message header");
-    }
+    byte[] header = read(inputStream, HEADER_LENGTH);
     ByteBuffer bb = ByteBuffer.allocate(header.length).order(ByteOrder.BIG_ENDIAN);
     bb.clear();
     bb.put(header);
@@ -58,11 +72,7 @@ public class Message {
     destination = bb.getInt();
     numHops = bb.getInt();
     int dataSize = bb.getInt();
-    data = new byte[dataSize];
-    read = inputStream.read(data, 0, data.length);
-    if (read != data.length) {
-      throw new Exception("ERROR! Bad message, Expected: " + data.length + " Got: " + read);
-    }
+    data = read(inputStream, dataSize);
   }
 
   public void setTimestamp(long ts) {
