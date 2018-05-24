@@ -83,7 +83,7 @@ class ServerWorker implements Runnable {
   public ServerWorker(int port, MessageRouter router, StatsUpdater updater) throws Exception {
     System.out.println("Trying to start server on port " + port);
     server = new ServerSocket(port);
-    server.setReceiveBufferSize(1024 * 1024 * 1024);
+    server.setReceiveBufferSize(1024 * 1024 * 1024 * 20);
     System.out.println("Server listening on port " + server.getLocalPort());
     workers = new ArrayList<InConnectionWorker>();
     this.router = router;
