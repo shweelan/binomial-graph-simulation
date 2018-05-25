@@ -13,6 +13,7 @@ import bn.MessageRouter;
 import bn.StatsUpdater;
 
 class InConnectionWorker implements Runnable {
+  private static final int BUFFER_SIZE = 1024 * 1024 * 1024;
   private Socket socket;
   private String id;
   private MessageRouter router;
@@ -37,7 +38,7 @@ class InConnectionWorker implements Runnable {
 
   public void run() {
     try {
-      BufferedInputStream inputStream = new BufferedInputStream(this.socket.getInputStream());
+      BufferedInputStream inputStream = new BufferedInputStream(this.socket.getInputStream(), BUFFER_SIZE);
       try {
         while (true) {
           Message message = new Message(inputStream);
