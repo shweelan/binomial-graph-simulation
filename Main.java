@@ -402,7 +402,7 @@ class Main {
       if (config.containsKey("msgcount")) numMessages = Integer.parseInt(config.get("msgcount"));
       if (config.containsKey("msgsize")) messageSize = Integer.parseInt(config.get("msgsize"));
       if (config.containsKey("extracons")) extraConnectionsCount = Integer.parseInt(config.get("extracons"));
-      if (config.containsKey("reroutefreq")) reRoutingFrequency = Long.parseLong(config.get("reroutfreq"));
+      if (config.containsKey("reroutefreq")) reRoutingFrequency = Long.parseLong(config.get("reroutefreq"));
       if (config.containsKey("datadist")) {
         int sum = 0;
         String[] split = config.get("datadist").split(",");
