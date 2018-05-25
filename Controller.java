@@ -29,6 +29,7 @@ public class Controller {
 
   public static Controller getInstance() throws Exception {
     init();
+    timestampDiff = new Long(0);
     if (timestampDiff == null) {
       // synchronize timestamp with redis
       String[] command = {
