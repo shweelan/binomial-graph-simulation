@@ -13,7 +13,7 @@ import bn.MessageRouter;
 import bn.StatsUpdater;
 
 class InConnectionWorker implements Runnable {
-  private static final int BUFFER_SIZE = 1024 * 1024 * 1024;
+  private static final int BUFFER_SIZE = 1024 * 1024;
   private Socket socket;
   private String id;
   private MessageRouter router;
