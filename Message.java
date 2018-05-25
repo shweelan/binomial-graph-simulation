@@ -44,8 +44,7 @@ public class Message {
   private byte[] read(InputStream inputStream, int len) throws Exception {
     if (len < 0) throw new IllegalArgumentException();
     byte[] data = new byte[len];
-    int read = inputStream.read(data, 0, len);
-    if (read == len) return data;
+    int read = 0;
     int retries = 0;
     while (read < len) {
       int _read = inputStream.read(data, read, len - read);
@@ -53,8 +52,8 @@ public class Message {
         if (++retries == DATA_READ_RETRIES) throw new EOFException("ERROR! Bad message, Expected:" + len + " Got:" + read);
       }
       else {
-        retries = 0;
         read += _read;
+        retries = 0;
       }
     }
     return data;
