@@ -60,9 +60,9 @@ class OutConnectionWorker implements Runnable {
 }
 
 public class DirectConnection {
-  private static final int BUFFER_SIZE = 1024 * 1024 * 1024;
+  private static final int BUFFER_SIZE = 1024 * 1024;
   private static final int QUEUE_SIZE = 1024; // Messages before blocking
-  private static final long QUEUE_OVERFLOW_BLOCK_TIMEOUT = 10; // Milliseconds
+  private static final long QUEUE_OVERFLOW_BLOCK_TIMEOUT = 100; // Milliseconds
   private int remoteNodeNumber;
   private String remoteHost;
   private int remotePort;

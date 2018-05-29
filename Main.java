@@ -253,7 +253,7 @@ class Main {
         if (ret < dataDistribution.length && ret < numNodes) {
           destination = ret;
         }
-        debug = debug + " " + dataDistribution + " " + randomDist + " " + ret;
+        debug = debug + " " + Arrays.toString(dataDistribution) + " " + randomDist + " " + ret;
       }
       if (destination < 0) {
         destination = random.nextInt(numNodes);
@@ -267,6 +267,9 @@ class Main {
       if (sendMessage(message)) {
         messagesCount++;
         if (messagesCount % 101 == 0) Thread.sleep(50);
+      }
+      else {
+        Thread.sleep(100);
       }
     }
     simulationEnded = true;
