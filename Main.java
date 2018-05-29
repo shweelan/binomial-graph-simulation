@@ -259,6 +259,7 @@ class Main {
         destination = random.nextInt(numNodes);
       }
       debug = debug + " " + destination;
+      System.out.println(debug);
       if (destination == selfIndex) continue;
       toNodes[destination]++;
       long ts = controller.getTimestamp();
