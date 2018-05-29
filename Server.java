@@ -76,7 +76,7 @@ class InConnectionWorker implements Runnable {
 }
 
 class ServerWorker implements Runnable {
-  private static final int BUFFER_SIZE = 1024 * 1024 * 1024;
+  private static final int BUFFER_SIZE = 1024 * 1024 * 128; // 128 MB
   private ServerSocket server = null;
   private MessageRouter router = null;
   private StatsUpdater updater = null;
