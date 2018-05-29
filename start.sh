@@ -53,7 +53,7 @@ mkdir -p "$logs_dir"
 while [[ true ]]; do
   while [[ true ]]; do
     ready_str="READY_$ip"
-    redis_api "SETEX" $ready_str 2 $placeholder
+    redis_api "SETEX" $ready_str 4 $placeholder
     redis_api "EXISTS" $bootstrap_key
     if [[ "$redis_api_ret" == "1" ]]; then
       break
