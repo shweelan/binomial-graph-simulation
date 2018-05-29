@@ -245,6 +245,7 @@ class Main {
         lastReRoute = now;
       }
       int destination = -1;
+      String debug = "###################";
       if (dataDistribution != null) {
         int randomDist = random.nextInt(100) + 1; // 1 - 100
         int ret = Arrays.binarySearch(dataDistribution, randomDist);
@@ -252,10 +253,12 @@ class Main {
         if (ret < dataDistribution.length && ret < numNodes) {
           destination = ret;
         }
+        debug = debug + " " + dataDistribution + " " + randomDist + " " + ret;
       }
       if (destination < 0) {
         destination = random.nextInt(numNodes);
       }
+      debug = debug + " " + destination;
       if (destination == selfIndex) continue;
       toNodes[destination]++;
       long ts = controller.getTimestamp();
