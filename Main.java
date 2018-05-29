@@ -269,8 +269,8 @@ class Main {
         if (messagesCount % 101 == 0) Thread.sleep(50);
       }
       else {
-        // sleep 2 ms for each 1024 bytes
-        Thread.sleep(2 * (messageSize / 1024 + 1));
+        // sleep 1 ms for each 1024 bytes
+        Thread.sleep(1 * (messageSize / 1024 + 1));
       }
     }
     simulationEnded = true;
