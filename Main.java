@@ -231,8 +231,8 @@ class Main {
   private static void startSimulation() throws Exception {
     simulationStarted = true;
     System.out.println("Simulation Started");
-
-    long[] toNodes = new long[nodes.size()];
+    int numNodes = nodes.size();
+    long[] toNodes = new long[numNodes];
     Arrays.fill(toNodes, 0L);
     Random random = new Random();
     int messagesCount = 0;
@@ -249,12 +249,12 @@ class Main {
         int randomDist = random.nextInt(100) + 1; // 1 - 100
         int ret = Arrays.binarySearch(dataDistribution, randomDist);
         if (ret < 0) ret = ++ret * -1;
-        if (ret < dataDistribution.length && ret < nodes.size()) {
+        if (ret < dataDistribution.length && ret < numNodes) {
           destination = ret;
         }
       }
       if (destination < 0) {
-        destination = random.nextInt(nodes.size());
+        destination = random.nextInt(numNodes);
       }
       if (destination == selfIndex) continue;
       toNodes[destination]++;
