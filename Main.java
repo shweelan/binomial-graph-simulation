@@ -268,6 +268,7 @@ class Main {
     simulationEnded = true;
     System.out.println("Simulation Ended");
     System.out.println("Messages sent to each Node " + Arrays.toString(toNodes));
+    relieveLongestRoutes();
   }
 
   private static void recordResults(long duration, long simulationTime) throws Exception {
