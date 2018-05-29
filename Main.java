@@ -270,7 +270,7 @@ class Main {
       }
       else {
         // sleep 5 ms for each 1024 bytes
-        Thread.sleep(5 * (messageSize / 1024 + 1));
+        Thread.sleep(1 * (messageSize / 1024 + 1));
       }
     }
     simulationEnded = true;
