@@ -166,7 +166,7 @@ class Main {
     relieveWorstRoutes(Route.getDescendingLengthComparator());
   }
 
-  private static void relieveConjestedRoutes() throws Exception {
+  private static void relieveCongestedRoutes() throws Exception {
     relieveWorstRoutes(Route.getDescendingReductionComparator());
     for (Route route : routes.values()) {
       route.resetUsage();
@@ -241,7 +241,7 @@ class Main {
     while (messagesCount < numMessages) {
       long now = System.currentTimeMillis();
       if (now - lastReRoute >= reRoutingFrequency) {
-        relieveConjestedRoutes();
+        relieveCongestedRoutes();
         lastReRoute = now;
       }
       int destination = -1;
